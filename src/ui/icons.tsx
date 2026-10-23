@@ -26,6 +26,10 @@ const paths = {
   redo: "M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3",
   group: "M3 6h7l2 2h9v11H3z",
   ungroup: "M3 6h7l2 2h9v11H3zM9 13h6",
+  door: "M6 21V3h12v18M3 21h18M14 12h.01",
+  window: "M4 5h16v14H4zM12 5v14M4 12h16",
+  light:
+    "M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   chair: "M7 4h10v8H7zM6 12h12v3H6zM7 15v5M17 15v5",
   merge: "M4 4h9v9H4zM11 11h9v9h-9z",
   palette:

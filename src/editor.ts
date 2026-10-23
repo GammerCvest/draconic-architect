@@ -6,6 +6,9 @@ import {
   newLayer,
   serialize,
   type FloorObject,
+  type BarrierObject,
+  type BarrierType,
+  type DoorObject,
   type ItemObject,
   type MapAsset,
   type Group,
@@ -31,16 +34,37 @@ import {
   type MultiPolygon,
   type Pair,
   type Vec,
+  quadSegment,
+  segmentQuad,
 } from "./geometry";
+import type { MapFeatures } from "./export/uvtt";
+import { computeFog, type Fog } from "./fog";
 import { lang, t } from "./i18n";
+import { presetLight, type LightData, type LightPreset } from "./light";
 import { assetInfo, USER } from "./items/resolve";
-import type { DrawItem } from "./render/renderer";
+import type { DrawFeature, DrawItem } from "./render/renderer";
 import type { Scene, StyledRegion } from "./render/renderer";
 import { DEFAULT_STYLE_ID, PRESETS } from "./style/presets";
 import type { MapStyle } from "./style/types";
 import { View } from "./view";
 
-export type ToolId = "select" | "rect" | "polygon" | "brush" | "item";
+export type ToolId = "select" | "rect" | "polygon" | "brush" | "item" | "door" | "barrier" | "light";
+
+const BARRIER_NAMES = {
+  window: "barrierWindow",
+  bars: "barrierBars",
+  curtain: "barrierCurtain",
+  bushes: "barrierBushes",
+  crayon: "barrierCrayon",
+} as const;
+
+const LIGHT_NAMES = {
+  torch: "lightTorch",
+  candle: "lightCandle",
+  brazier: "lightBrazier",
+  campfire: "lightCampfire",
+  lantern: "lightLantern",
+} as const;
 export type DrawMode = "floor" | "carve" | "room";
 
 const AUTOSAVE_KEY = "da.autosave";
@@ -62,6 +86,9 @@ export class Editor {
   settingsOpen = false;
   stylesOpen = false;
   itemBrush: string | null = null;
+  lightPreset: LightPreset = "torch";
+  barrierType: BarrierType = "window";
+  showFog = false;
   attachPicking = false;
   preview: MapDoc | null = null;
   pointer: Vec | null = null;
@@ -214,6 +241,52 @@ export class Editor {
       });
     }
     return out;
+  }
+
+  drawFeatures(): DrawFeature[] {
+    const out: DrawFeature[] = [];
+    for (const o of this.stacked()) {
+      if ((o.kind !== "door" && o.kind !== "barrier") || !this.visible(o)) continue;
+      const st = this.style(o.style ?? this.layer(o.layer).style ?? this.doc.settings.style);
+      const [a, b] = quadSegment(o.shape);
+      const common = { a, b, ink: st.walls.color, fill: st.floor.color };
+      if (o.kind === "door") {
+        const look = o.look ? (assetInfo(this.doc, o.look, lang())?.src ?? null) : null;
+        out.push({ ...common, kind: "door", open: o.open, look });
+      } else {
+        out.push({ ...common, kind: "barrier", type: o.barrier, color: o.color });
+      }
+    }
+    return out;
+  }
+
+  mapFeatures(): MapFeatures {
+    const lights: MapFeatures["lights"] = [];
+    for (const o of this.stacked()) {
+      if (o.kind !== "item" || !o.light || !this.visible(o)) continue;
+      const ring = o.shape[0][0];
+      lights.push({ x: (ring[0][0] + ring[2][0]) / 2, y: (ring[0][1] + ring[2][1]) / 2, light: o.light });
+    }
+    return { fog: this.doc.settings.fog ? this.fog() : null, lights };
+  }
+
+  fog(): Fog {
+    const doors: Fog["doors"] = [];
+    const barriers: { a: Pair; b: Pair; blocksSight: boolean }[] = [];
+    const blockers: Pair[][] = [];
+    for (const o of this.stacked()) {
+      if (!this.visible(o)) continue;
+      if (o.kind === "door") {
+        const [a, b] = quadSegment(o.shape);
+        doors.push({ a, b, open: o.open });
+      } else if (o.kind === "barrier") {
+        const [a, b] = quadSegment(o.shape);
+        barriers.push({ a, b, blocksSight: o.blocksSight });
+      } else if (o.kind === "item" && o.blocksLight && o.shape[0]?.[0]) {
+        blockers.push(o.shape[0][0]);
+      }
+    }
+    return computeFog({ floor: this.floor(), doors, barriers, blockers });
   }
 
   visible(o: MapObject): boolean {
@@ -527,6 +600,8 @@ export class Editor {
       style: null,
       asset,
       tint: true,
+      light: null,
+      blocksLight: false,
       shape: [
         [
           [
@@ -569,6 +644,113 @@ export class Editor {
     );
   }
 
+  private addOnActiveLayer(obj: MapObject) {
+    const doc = this.history.doc;
+    const layer = this.layer(this.activeLayer);
+    if (layer.locked) return;
+    const layers = layer.hidden ? doc.layers.map((l) => (l.id === layer.id ? { ...l, hidden: false } : l)) : doc.layers;
+    this.commit({ ...doc, layers, objects: [...doc.objects, { ...obj, layer: layer.id }] });
+    this.select([obj.id]);
+  }
+
+  private base(name: string, a: Pair, b: Pair) {
+    return {
+      id: newId(),
+      layer: this.activeLayer,
+      name,
+      hidden: false,
+      z: 0,
+      group: null,
+      attachedTo: null,
+      style: null,
+      shape: segmentQuad(a, b),
+    };
+  }
+
+  addDoor(a: Pair, b: Pair) {
+    const door: DoorObject = {
+      ...this.base(t("defaultDoor"), a, b),
+      kind: "door",
+      open: false,
+      players: false,
+      look: null,
+    };
+    this.addOnActiveLayer(door);
+  }
+
+  addBarrier(a: Pair, b: Pair) {
+    const type = this.barrierType;
+    const barrier: BarrierObject = {
+      ...this.base(t(BARRIER_NAMES[type]), a, b),
+      kind: "barrier",
+      barrier: type,
+      blocksSight: type === "curtain" || type === "bushes",
+      color: "#c0392b",
+    };
+    this.addOnActiveLayer(barrier);
+  }
+
+  addLight(at: Vec) {
+    const hit = this.pick(at, 0);
+    const light = presetLight(this.lightPreset);
+    if (hit?.kind === "item") {
+      this.update(hit.id, { light });
+      this.select([hit.id]);
+      return;
+    }
+    const size = 0.5;
+    const x = Math.round(at.x * 2) / 2 - size / 2;
+    const y = Math.round(at.y * 2) / 2 - size / 2;
+    const item: ItemObject = {
+      id: newId(),
+      kind: "item",
+      layer: this.activeLayer,
+      name: t(LIGHT_NAMES[this.lightPreset]),
+      hidden: false,
+      z: 0,
+      group: null,
+      attachedTo: null,
+      style: null,
+      asset: "builtin:classic/light",
+      tint: true,
+      light,
+      blocksLight: false,
+      shape: [
+        [
+          [
+            [x, y],
+            [x + size, y],
+            [x + size, y + size],
+            [x, y + size],
+          ],
+        ],
+      ],
+    };
+    this.addOnActiveLayer(item);
+  }
+
+  setLight(id: string, patch: Partial<LightData> | null) {
+    const o = this.byId(id);
+    if (o?.kind !== "item") return;
+    const light = patch === null ? null : { ...(o.light ?? presetLight(this.lightPreset)), ...patch };
+    this.update(id, { light });
+  }
+
+  setLightPreset(preset: LightPreset) {
+    this.lightPreset = preset;
+    this.emit();
+  }
+
+  setBarrierType(type: BarrierType) {
+    this.barrierType = type;
+    this.emit();
+  }
+
+  setShowFog(on: boolean) {
+    this.showFog = on;
+    this.emit();
+  }
+
   setItemBrush(asset: string | null) {
     this.itemBrush = asset;
     this.emit();
@@ -596,7 +778,13 @@ export class Editor {
     return this.mapIds(ids, fn, base);
   }
 
-  update(id: string, patch: Partial<Omit<FloorObject, "kind">> & Partial<Omit<ItemObject, "kind">>) {
+  update(
+    id: string,
+    patch: Partial<Omit<FloorObject, "kind">> &
+      Partial<Omit<ItemObject, "kind">> &
+      Partial<Omit<DoorObject, "kind">> &
+      Partial<Omit<BarrierObject, "kind">>,
+  ) {
     this.commit(this.mapIds(new Set([id]), (o) => ({ ...o, ...patch }) as MapObject));
   }
 

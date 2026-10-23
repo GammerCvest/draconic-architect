@@ -1,4 +1,6 @@
-import type { MultiPolygon } from "../geometry";
+import type { Fog } from "../fog";
+import type { Pair } from "../geometry";
+import type { LightData } from "../light";
 
 export interface ExportFrame {
   originX: number;
@@ -8,21 +10,21 @@ export interface ExportFrame {
   pxPerCell: number;
 }
 
-export function wallLines(floor: MultiPolygon): { x: number; y: number }[][] {
-  const lines: { x: number; y: number }[][] = [];
-  for (const poly of floor) {
-    for (const ring of poly) {
-      const pts = ring.map(([x, y]) => ({ x, y }));
-      pts.push({ ...pts[0] });
-      lines.push(pts);
-    }
-  }
-  return lines;
+export interface MapLight {
+  x: number;
+  y: number;
+  light: LightData;
 }
 
-export async function buildUvtt(png: Blob, floor: MultiPolygon, frame: ExportFrame): Promise<Blob> {
+export interface MapFeatures {
+  fog: Fog | null;
+  lights: MapLight[];
+}
+
+export async function buildUvtt(png: Blob, features: MapFeatures, frame: ExportFrame): Promise<Blob> {
   const image = await blobToBase64(png);
-  const toFrame = (p: { x: number; y: number }) => ({ x: p.x - frame.originX, y: p.y - frame.originY });
+  const toFrame = ([x, y]: Pair) => ({ x: x - frame.originX, y: y - frame.originY });
+  const fog = features.fog;
   const data = {
     format: 0.3,
     resolution: {
@@ -30,11 +32,25 @@ export async function buildUvtt(png: Blob, floor: MultiPolygon, frame: ExportFra
       map_size: { x: frame.cols, y: frame.rows },
       pixels_per_grid: frame.pxPerCell,
     },
-    line_of_sight: wallLines(floor).map((line) => line.map(toFrame)),
+    line_of_sight: fog ? fog.walls.map((line) => line.map(toFrame)) : [],
     objects_line_of_sight: [],
-    portals: [],
+    portals: (fog?.doors ?? []).map((d) => ({
+      position: toFrame([(d.a[0] + d.b[0]) / 2, (d.a[1] + d.b[1]) / 2]),
+      bounds: [toFrame(d.a), toFrame(d.b)],
+      rotation: Math.atan2(d.b[1] - d.a[1], d.b[0] - d.a[0]),
+      closed: !d.open,
+      freestanding: false,
+    })),
     environment: { baked_lighting: false, ambient_light: "ffffffff" },
-    lights: [],
+    lights: features.lights
+      .filter((l) => l.light.lit)
+      .map((l) => ({
+        position: toFrame([l.x, l.y]),
+        range: l.light.range,
+        intensity: l.light.dim ? 0.5 : 1,
+        color: "ffffd9a0",
+        shadows: true,
+      })),
     image,
   };
   return new Blob([JSON.stringify(data)], { type: "application/json" });

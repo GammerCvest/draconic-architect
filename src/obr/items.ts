@@ -72,7 +72,11 @@ function renderGrid() {
   const grid = root.querySelector(".grid")!;
   const q = query.trim().toLowerCase();
   const list = CATALOG.filter(
-    (c) => c.set === set && (category === "all" || c.category === category) && c.name[lang()].toLowerCase().includes(q),
+    (c) =>
+      c.set === set &&
+      c.category !== "doors" &&
+      (category === "all" || c.category === category) &&
+      c.name[lang()].toLowerCase().includes(q),
   );
   grid.replaceChildren(
     ...list.map((c) => {

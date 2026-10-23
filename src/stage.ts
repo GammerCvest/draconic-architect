@@ -6,8 +6,10 @@ import { Renderer } from "./render/renderer";
 import {
   BrushTool,
   ItemTool,
+  LightTool,
   PolygonTool,
   RectTool,
+  SegmentTool,
   ROOM_FILL,
   ROOM_LINE,
   SelectTool,
@@ -17,6 +19,15 @@ import {
 } from "./tools";
 
 export const BASE_ZOOM = 48;
+
+const SELECTION_COLORS = {
+  floor: "59, 110, 168",
+  carve: "176, 65, 62",
+  room: "124, 82, 150",
+  item: "58, 120, 90",
+  door: "150, 100, 40",
+  barrier: "40, 130, 140",
+};
 const KEY_PAN = 60;
 
 const TOOL_KEYS: Record<string, ToolId> = {
@@ -25,6 +36,9 @@ const TOOL_KEYS: Record<string, ToolId> = {
   KeyP: "polygon",
   KeyB: "brush",
   KeyI: "item",
+  KeyO: "door",
+  KeyN: "barrier",
+  KeyL: "light",
 };
 const MODE_KEYS: Record<string, DrawMode> = { Digit1: "floor", Digit2: "carve", Digit3: "room" };
 const PAN_KEYS: Record<string, [number, number]> = {
@@ -68,6 +82,9 @@ export class Stage {
       polygon: new PolygonTool(host),
       brush: new BrushTool(host),
       item: new ItemTool(host),
+      door: new SegmentTool(host, "door"),
+      barrier: new SegmentTool(host, "barrier"),
+      light: new LightTool(host),
     };
     this.activeTool = this.tools[editor.tool];
     onImageLoad(() => this.requestDraw());
@@ -219,9 +236,7 @@ export class Stage {
 
   private bindKeys() {
     window.addEventListener("keydown", (e) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA"))
-        return;
+      if (typing(e.target)) return;
       if (this.editor.settingsOpen) return;
       if (this.activeTool.key?.(e)) {
         e.preventDefault();
@@ -392,8 +407,14 @@ export class Stage {
     const view = ed.view;
     const cam = { zoom: view.zoom * dpr, ox: view.ox * dpr, oy: view.oy * dpr };
     this.renderer.setScene(ed.scene());
-    this.renderer.draw(this.ctx, w, h, cam, { grid: settings.grid, items: ed.drawItems() });
+    this.renderer.draw(this.ctx, w, h, cam, {
+      grid: settings.grid,
+      items: ed.drawItems(),
+      features: ed.drawFeatures(),
+    });
     this.drawRooms(cam.zoom, dpr);
+    this.drawLights(cam.zoom);
+    if (ed.showFog) this.drawFog(cam.zoom);
     this.drawSelection(cam.zoom);
     this.activeTool.overlay(this.ctx, cam.zoom);
   }
@@ -425,6 +446,59 @@ export class Stage {
     ctx.restore();
   }
 
+  private drawLights(zoom: number) {
+    const ed = this.editor;
+    const ctx = this.ctx;
+    ctx.save();
+    for (const o of ed.stacked()) {
+      if (o.kind !== "item" || !o.light || !ed.visible(o)) continue;
+      const ring = o.shape[0][0];
+      const cx = (ring[0][0] + ring[2][0]) / 2;
+      const cy = (ring[0][1] + ring[2][1]) / 2;
+      const dir = Math.atan2(ring[1][1] - ring[0][1], ring[1][0] - ring[0][0]);
+      const r = o.light.range;
+      const half = (o.light.angle * Math.PI) / 360;
+      const selected = ed.selection.has(o.id);
+      ctx.strokeStyle = o.light.lit ? "rgba(214, 150, 30, 0.9)" : "rgba(120, 120, 120, 0.7)";
+      ctx.fillStyle = o.light.lit ? "rgba(255, 200, 80, 0.04)" : "rgba(0, 0, 0, 0)";
+      ctx.lineWidth = (selected ? 2 : 1) / zoom;
+      ctx.setLineDash([6 / zoom, 5 / zoom]);
+      ctx.beginPath();
+      if (o.light.angle >= 360) ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      else {
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, dir - half, dir + half);
+        ctx.closePath();
+      }
+      ctx.fill();
+      if (selected || o.light.lit) ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  private drawFog(zoom: number) {
+    const fog = this.editor.fog();
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineWidth = 3 / zoom;
+    ctx.strokeStyle = "rgba(220, 40, 40, 0.85)";
+    for (const line of fog.walls) {
+      ctx.beginPath();
+      line.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.stroke();
+    }
+    for (const d of fog.doors) {
+      ctx.strokeStyle = d.open ? "rgba(40, 160, 70, 0.9)" : "rgba(230, 140, 20, 0.95)";
+      ctx.setLineDash(d.open ? [5 / zoom, 4 / zoom] : []);
+      ctx.beginPath();
+      ctx.moveTo(d.a[0], d.a[1]);
+      ctx.lineTo(d.b[0], d.b[1]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   private drawSelection(zoom: number) {
     const ed = this.editor;
     const ctx = this.ctx;
@@ -433,14 +507,7 @@ export class Stage {
       const selected = ed.selection.has(o.id);
       if (!selected && !attached.has(o.id)) continue;
       const path = shapePath(o.shape);
-      const color =
-        o.kind === "room"
-          ? "124, 82, 150"
-          : o.kind === "item"
-            ? "58, 120, 90"
-            : o.carve
-              ? "176, 65, 62"
-              : "59, 110, 168";
+      const color = SELECTION_COLORS[o.kind === "floor" && o.carve ? "carve" : o.kind];
       if (selected) {
         ctx.fillStyle = `rgba(${color}, ${o.hidden ? 0.04 : 0.06})`;
         ctx.fill(path, "evenodd");
@@ -467,6 +534,7 @@ export class Stage {
     const out = this.renderer.exportCanvas(settings.exportPxPerCell, {
       grid: settings.grid,
       items: this.editor.drawItems(),
+      features: this.editor.drawFeatures(),
     });
     if (!out) return null;
     const png = await new Promise<Blob | null>((resolve) => out.canvas.toBlob(resolve, "image/png"));
@@ -485,4 +553,10 @@ function shapePath(shape: MultiPolygon): Path2D {
     }
   }
   return path;
+}
+
+function typing(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return true;
+  return target instanceof HTMLInputElement && !["checkbox", "radio", "button"].includes(target.type);
 }

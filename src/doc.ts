@@ -1,8 +1,9 @@
 import type { MultiPolygon } from "./geometry";
+import type { LightData } from "./light";
 import type { MapStyle } from "./style/types";
 
 const FILE_KIND = "draconic-architect";
-export const FILE_VERSION = 6;
+export const FILE_VERSION = 7;
 
 export type LayerRole = "floor" | "rooms" | "objects";
 
@@ -46,9 +47,27 @@ export interface ItemObject extends BaseObject {
   kind: "item";
   asset: string;
   tint: boolean;
+  light: LightData | null;
+  blocksLight: boolean;
 }
 
-export type MapObject = FloorObject | RoomObject | ItemObject;
+export interface DoorObject extends BaseObject {
+  kind: "door";
+  open: boolean;
+  players: boolean;
+  look: string | null;
+}
+
+export type BarrierType = "window" | "bars" | "curtain" | "bushes" | "crayon";
+
+export interface BarrierObject extends BaseObject {
+  kind: "barrier";
+  barrier: BarrierType;
+  blocksSight: boolean;
+  color: string;
+}
+
+export type MapObject = FloorObject | RoomObject | ItemObject | DoorObject | BarrierObject;
 
 export interface MapAsset {
   name: string;
@@ -62,6 +81,7 @@ export interface MapSettings {
   snap: 1 | 0.5;
   exportPxPerCell: number;
   style: string;
+  fog: boolean;
 }
 
 export interface MapDoc {
@@ -74,7 +94,7 @@ export interface MapDoc {
 }
 
 function defaultSettings(style: string): MapSettings {
-  return { grid: true, snap: 1, exportPxPerCell: 100, style };
+  return { grid: true, snap: 1, exportPxPerCell: 100, style, fog: true };
 }
 
 export function newLayer(name: string, role?: LayerRole): Layer {

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { Group, ItemObject, Layer, MapObject } from "../doc";
+import type { BarrierObject, BarrierType, DoorObject, Group, ItemObject, Layer, MapObject } from "../doc";
+import { LIGHT_PRESETS, type LightPreset } from "../light";
+import { CATALOG } from "../items/catalog";
+import { BUILTIN } from "../items/resolve";
 import type { DrawMode, Editor, ToolId } from "../editor";
 import { lang, setLang, t, type Key } from "../i18n";
 import { BASE_ZOOM, type Stage } from "../stage";
@@ -92,7 +95,7 @@ function TopBar({ editor, stage }: Props) {
   };
   const exportUvtt = async () => {
     const out = await exportImage();
-    if (out) download(await buildUvtt(out.png, editor.floor(), out.frame), "map.dd2vtt");
+    if (out) download(await buildUvtt(out.png, editor.mapFeatures(), out.frame), "map.dd2vtt");
   };
   const toTable = async (where: "here" | "picture" | "new") => {
     try {
@@ -108,9 +111,9 @@ function TopBar({ editor, stage }: Props) {
       const out = await exportImage();
       if (!out) return;
       if (where === "new") {
-        await sendNewScene(t("appName"), out.png, editor.floor(), out.frame);
+        await sendNewScene(t("appName"), out.png, editor.mapFeatures(), out.frame);
         say(t("newSceneDone"), "SUCCESS");
-      } else if (await placeOnScene(t("appName"), out.png, editor.floor(), out.frame)) {
+      } else if (await placeOnScene(t("appName"), out.png, editor.mapFeatures(), out.frame)) {
         say(t("placedDone"), "SUCCESS");
         await closeEditor();
       }
@@ -196,6 +199,9 @@ const TOOLS: { id: ToolId; icon: IconName; title: Key }[] = [
   { id: "polygon", icon: "polygon", title: "toolPolygon" },
   { id: "brush", icon: "brush", title: "toolBrush" },
   { id: "item", icon: "chair", title: "toolItem" },
+  { id: "door", icon: "door", title: "toolDoor" },
+  { id: "barrier", icon: "window", title: "toolBarrier" },
+  { id: "light", icon: "light", title: "toolLight" },
 ];
 
 function ToolBar({ editor }: { editor: Editor }) {
@@ -290,6 +296,8 @@ function Sidebar({ editor }: { editor: Editor }) {
       </section>
       {editor.tool === "item" ? (
         <ItemsPanel editor={editor} />
+      ) : editor.tool === "barrier" || editor.tool === "light" ? (
+        <ToolOptions editor={editor} />
       ) : (
         <section class="objects">
           {listed.length === 0 && <div class="muted">{t("empty")}</div>}
@@ -435,9 +443,11 @@ function GroupRow({ editor, group, depth }: { editor: Editor; group: Group; dept
   );
 }
 
+const KIND_KEYS = { room: "kindRoom", item: "kindItem", door: "kindDoor", barrier: "kindBarrier" } as const;
+
 function kindKey(o: MapObject): Key {
   if (o.kind === "floor") return o.carve ? "kindCarve" : "kindFloor";
-  return o.kind === "room" ? "kindRoom" : "kindItem";
+  return KIND_KEYS[o.kind];
 }
 
 function ObjectRow({ editor, object, depth }: { editor: Editor; object: MapObject; depth: number }) {
@@ -552,6 +562,9 @@ function Properties({ editor }: { editor: Editor }) {
         </label>
       </div>
       {single?.kind === "item" && <ItemFields editor={editor} item={single} />}
+      {single?.kind === "item" && <LightFields editor={editor} item={single} />}
+      {single?.kind === "door" && <DoorFields editor={editor} door={single} />}
+      {single?.kind === "barrier" && <BarrierFields editor={editor} barrier={single} />}
       {sel.some((o) => o.kind !== "room") && (
         <label class="field">
           <span>{t("shapeStyle")}</span>
@@ -689,6 +702,9 @@ const HINTS: Record<ToolId, Key> = {
   polygon: "hintPolygon",
   brush: "hintBrush",
   item: "hintItem",
+  door: "hintDoor",
+  barrier: "hintBarrier",
+  light: "hintLight",
 };
 
 function StatusBar({ editor }: { editor: Editor }) {
@@ -719,6 +735,22 @@ function SettingsDialog({ editor }: { editor: Editor }) {
           />
           {t("grid")}
         </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            checked={s.fog}
+            onChange={(e) => editor.setSettings({ fog: e.currentTarget.checked })}
+          />
+          {t("fogSetting")}
+        </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            checked={editor.showFog}
+            onChange={(e) => editor.setShowFog(e.currentTarget.checked)}
+          />
+          {t("showFog")}
+        </label>
         <div class="field">
           <span>{t("snap")}</span>
           <div class="segmented">
@@ -747,6 +779,244 @@ function SettingsDialog({ editor }: { editor: Editor }) {
           <button onClick={close}>{t("close")}</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const BARRIER_TYPES: [BarrierType, Key][] = [
+  ["window", "barrierWindow"],
+  ["bars", "barrierBars"],
+  ["curtain", "barrierCurtain"],
+  ["bushes", "barrierBushes"],
+  ["crayon", "barrierCrayon"],
+];
+
+const LIGHT_PRESET_KEYS: [LightPreset, Key][] = [
+  ["torch", "lightTorch"],
+  ["candle", "lightCandle"],
+  ["brazier", "lightBrazier"],
+  ["campfire", "lightCampfire"],
+  ["lantern", "lightLantern"],
+];
+
+function ToolOptions({ editor }: { editor: Editor }) {
+  return (
+    <section class="objects">
+      {editor.tool === "barrier" ? (
+        <>
+          <h2>{t("barrierKind")}</h2>
+          <div class="segmented wrap">
+            {BARRIER_TYPES.map(([type, key]) => (
+              <button
+                key={type}
+                class={editor.barrierType === type ? "active" : ""}
+                onClick={() => editor.setBarrierType(type)}
+              >
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          <div class="muted small">{t("hintBarrier")}</div>
+        </>
+      ) : (
+        <>
+          <h2>{t("lightPresets")}</h2>
+          <div class="segmented wrap">
+            {LIGHT_PRESET_KEYS.map(([preset, key]) => (
+              <button
+                key={preset}
+                class={editor.lightPreset === preset ? "active" : ""}
+                onClick={() => editor.setLightPreset(preset)}
+              >
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          <div class="muted small">{t("hintLight")}</div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function NumberSlider(props: {
+  label: Key;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label class="slider">
+      <span>{t(props.label)}</span>
+      <input
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.currentTarget.value))}
+      />
+      <span class="value">{props.value}</span>
+    </label>
+  );
+}
+
+function LightFields({ editor, item }: { editor: Editor; item: ItemObject }) {
+  const light = item.light;
+  return (
+    <div class="sub">
+      <label class="check" title={t("blocksLight")}>
+        <input
+          type="checkbox"
+          checked={item.blocksLight}
+          onChange={(e) => editor.update(item.id, { blocksLight: e.currentTarget.checked })}
+        />
+        {t("blocksLight")}
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={!!light}
+          onChange={(e) => editor.setLight(item.id, e.currentTarget.checked ? {} : null)}
+        />
+        {t("lightOn")}
+      </label>
+      {light && (
+        <>
+          <div class="segmented wrap">
+            {LIGHT_PRESET_KEYS.map(([preset, key]) => (
+              <button key={preset} onClick={() => editor.setLight(item.id, { ...LIGHT_PRESETS[preset] })}>
+                {t(key)}
+              </button>
+            ))}
+          </div>
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={light.lit}
+              onChange={(e) => editor.setLight(item.id, { lit: e.currentTarget.checked })}
+            />
+            {t("lightLit")}
+          </label>
+          <NumberSlider
+            label="lightRange"
+            min={1}
+            max={30}
+            step={0.5}
+            value={light.range}
+            onChange={(v) => editor.setLight(item.id, { range: v })}
+          />
+          <NumberSlider
+            label="lightSoftness"
+            min={0}
+            max={1}
+            step={0.05}
+            value={light.softness}
+            onChange={(v) => editor.setLight(item.id, { softness: v })}
+          />
+          <NumberSlider
+            label="lightAngle"
+            min={20}
+            max={360}
+            step={5}
+            value={light.angle}
+            onChange={(v) => editor.setLight(item.id, { angle: v })}
+          />
+          <NumberSlider
+            label="lightSize"
+            min={0.02}
+            max={1}
+            step={0.02}
+            value={light.size}
+            onChange={(v) => editor.setLight(item.id, { size: v })}
+          />
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={light.dim}
+              onChange={(e) => editor.setLight(item.id, { dim: e.currentTarget.checked })}
+            />
+            {t("lightDim")}
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
+
+const DOOR_LOOKS = CATALOG.filter((c) => c.category === "doors" && !/window|curtain|portcullis/.test(c.id));
+
+function DoorFields({ editor, door }: { editor: Editor; door: DoorObject }) {
+  return (
+    <div class="sub">
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={door.open}
+          onChange={(e) => editor.update(door.id, { open: e.currentTarget.checked })}
+        />
+        {t("doorOpen")}
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={door.players}
+          onChange={(e) => editor.update(door.id, { players: e.currentTarget.checked })}
+        />
+        {t("doorPlayers")}
+      </label>
+      <label class="field">
+        <span>{t("doorLook")}</span>
+        <select
+          value={door.look ?? ""}
+          onChange={(e) => editor.update(door.id, { look: e.currentTarget.value || null })}
+        >
+          <option value="">{t("doorSymbol")}</option>
+          {DOOR_LOOKS.map((c) => (
+            <option key={c.id} value={BUILTIN + c.id}>
+              {c.name[lang()]} ({t(c.set === "sketch" ? "setSketch" : "setClassic")})
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function BarrierFields({ editor, barrier }: { editor: Editor; barrier: BarrierObject }) {
+  return (
+    <div class="sub">
+      <div class="segmented wrap">
+        {BARRIER_TYPES.map(([type, key]) => (
+          <button
+            key={type}
+            class={barrier.barrier === type ? "active" : ""}
+            onClick={() => editor.update(barrier.id, { barrier: type })}
+          >
+            {t(key)}
+          </button>
+        ))}
+      </div>
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={barrier.blocksSight}
+          onChange={(e) => editor.update(barrier.id, { blocksSight: e.currentTarget.checked })}
+        />
+        {t("blocksSight")}
+      </label>
+      {barrier.barrier === "crayon" && (
+        <label class="slider">
+          <span>{t("barrierColor")}</span>
+          <input
+            type="color"
+            value={barrier.color}
+            onChange={(e) => editor.update(barrier.id, { color: e.currentTarget.value })}
+          />
+        </label>
+      )}
     </div>
   );
 }

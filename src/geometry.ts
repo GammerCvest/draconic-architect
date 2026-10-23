@@ -238,3 +238,84 @@ export function xorRings(rings: Ring[]): MultiPolygon {
   const [first, ...rest] = rings.map((r): Polygon => [r]);
   return clean(pc.xor(first, ...rest));
 }
+
+export function segmentQuad(a: Pair, b: Pair, half = 0.12): MultiPolygon {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const nx = (-(b[1] - a[1]) / len) * half;
+  const ny = ((b[0] - a[0]) / len) * half;
+  return [
+    [
+      [
+        [a[0] + nx, a[1] + ny],
+        [b[0] + nx, b[1] + ny],
+        [b[0] - nx, b[1] - ny],
+        [a[0] - nx, a[1] - ny],
+      ],
+    ],
+  ];
+}
+
+export function quadSegment(shape: MultiPolygon): [Pair, Pair] {
+  const r = shape[0][0];
+  return [
+    [(r[0][0] + r[3][0]) / 2, (r[0][1] + r[3][1]) / 2],
+    [(r[1][0] + r[2][0]) / 2, (r[1][1] + r[2][1]) / 2],
+  ];
+}
+
+export function insideIntervals(a: Pair, b: Pair, convex: Ring): [number, number] | null {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const n = convex.length;
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const p = convex[i];
+    const q = convex[(i + 1) % n];
+    area += p[0] * q[1] - q[0] * p[1];
+  }
+  const sign = area > 0 ? 1 : -1;
+  for (let i = 0; i < n; i++) {
+    const p = convex[i];
+    const q = convex[(i + 1) % n];
+    const ex = q[0] - p[0];
+    const ey = q[1] - p[1];
+    const num = sign * (ex * (a[1] - p[1]) - ey * (a[0] - p[0]));
+    const den = sign * (ex * dy - ey * dx);
+    if (den === 0) {
+      if (num < 0) return null;
+      continue;
+    }
+    const t = -num / den;
+    if (den > 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+    if (t0 > t1) return null;
+  }
+  return t1 - t0 > 1e-9 ? [t0, t1] : null;
+}
+
+export function wallSlot(floor: MultiPolygon, p: Vec, reach = 1): [Pair, Pair] | null {
+  let best: Segment | null = null;
+  let bestD = reach;
+  for (const seg of boundarySegments(floor)) {
+    const d = distToSegment(p.x, p.y, seg);
+    if (d < bestD) {
+      bestD = d;
+      best = seg;
+    }
+  }
+  if (!best) return null;
+  const len = Math.hypot(best.bx - best.ax, best.by - best.ay);
+  const ux = (best.bx - best.ax) / len;
+  const uy = (best.by - best.ay) / len;
+  const along = (p.x - best.ax) * ux + (p.y - best.ay) * uy;
+  const size = Math.min(1, len);
+  const center = len < 1 ? len / 2 : Math.min(len - 0.5, Math.max(0.5, Math.floor(along) + 0.5));
+  const s0 = center - size / 2;
+  const s1 = center + size / 2;
+  return [
+    [best.ax + ux * s0, best.ay + uy * s0],
+    [best.ax + ux * s1, best.ay + uy * s1],
+  ];
+}

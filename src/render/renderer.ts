@@ -1,5 +1,6 @@
 import { boundarySegments, bounds, pointInside, type MultiPolygon, type Pair, type Segment } from "../geometry";
 import type { ExportFrame } from "../export/uvtt";
+import type { BarrierType } from "../doc";
 import type { MapStyle } from "../style/types";
 import { image, tintedImage } from "./images";
 import { makeGrainTile, makePaperTile } from "./paper";
@@ -18,9 +19,14 @@ export interface DrawItem {
   corners: [Pair, Pair, Pair];
 }
 
+export type DrawFeature =
+  | { kind: "door"; a: Pair; b: Pair; open: boolean; look: string | null; ink: string; fill: string }
+  | { kind: "barrier"; a: Pair; b: Pair; type: BarrierType; color: string; ink: string; fill: string };
+
 export interface RenderOptions {
   grid: boolean;
   items: DrawItem[];
+  features: DrawFeature[];
 }
 
 export interface StyledRegion {
@@ -153,6 +159,10 @@ export class Renderer {
       }
     }
     ink.globalAlpha = 1;
+    for (const f of opts.features) drawFeature(ink, f, cam.zoom);
+    ink.globalAlpha = 1;
+    ink.setLineDash([]);
+    ink.globalCompositeOperation = "source-over";
 
     if (paper.grain > 0) {
       ink.setTransform(1, 0, 0, 1, 0, 0);
@@ -309,6 +319,124 @@ function drawItem(ctx: CanvasRenderingContext2D, item: DrawItem) {
   ctx.transform((p1[0] - p0[0]) / w, (p1[1] - p0[1]) / w, (p3[0] - p0[0]) / h, (p3[1] - p0[1]) / h, p0[0], p0[1]);
   ctx.drawImage(pic, 0, 0);
   ctx.restore();
+}
+
+function quad(ctx: CanvasRenderingContext2D, a: Pair, ux: number, uy: number, len: number, half: number) {
+  const nx = -uy * half;
+  const ny = ux * half;
+  ctx.beginPath();
+  ctx.moveTo(a[0] + nx, a[1] + ny);
+  ctx.lineTo(a[0] + ux * len + nx, a[1] + uy * len + ny);
+  ctx.lineTo(a[0] + ux * len - nx, a[1] + uy * len - ny);
+  ctx.lineTo(a[0] - nx, a[1] - ny);
+  ctx.closePath();
+}
+
+function drawFeature(ctx: CanvasRenderingContext2D, f: DrawFeature, zoom: number) {
+  const [a, b] = [f.a, f.b];
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (len === 0) return;
+  const ux = (b[0] - a[0]) / len;
+  const uy = (b[1] - a[1]) / len;
+  const nx = -uy;
+  const ny = ux;
+  const thin = Math.max(0.035, 1.2 / zoom);
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  if (!(f.kind === "barrier" && f.type === "crayon")) {
+    ctx.globalCompositeOperation = "destination-out";
+    quad(ctx, a, ux, uy, len, 0.14);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+  ctx.strokeStyle = f.ink;
+  ctx.fillStyle = f.fill;
+  ctx.lineWidth = thin;
+  const at = (t: number, o = 0): Pair => [a[0] + ux * t + nx * o, a[1] + uy * t + ny * o];
+  const line = (p: Pair, q: Pair) => {
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+  };
+  if (f.kind === "door") {
+    const pic = f.look ? tintedImage(f.look, f.ink) : null;
+    if (pic) {
+      ctx.save();
+      ctx.globalAlpha = f.open ? 0.45 : 1;
+      ctx.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      ctx.rotate(Math.atan2(uy, ux));
+      ctx.drawImage(pic, -len / 2, -len / 2, len, len);
+      ctx.restore();
+      return;
+    }
+    if (!f.open) {
+      quad(ctx, a, ux, uy, len, 0.12);
+      ctx.fill();
+      ctx.stroke();
+      return;
+    }
+    line(at(0, 0.12), at(0, -0.12));
+    line(at(len, 0.12), at(len, -0.12));
+    const leaf: Pair = at(0, -len);
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(leaf[0], leaf[1]);
+    ctx.lineWidth = thin * 2.5;
+    ctx.stroke();
+    ctx.lineWidth = thin * 0.7;
+    ctx.setLineDash([0.08, 0.08]);
+    const start = Math.atan2(uy, ux);
+    ctx.beginPath();
+    ctx.arc(a[0], a[1], len, start - Math.PI / 2, start);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    return;
+  }
+  switch (f.type) {
+    case "window":
+      quad(ctx, a, ux, uy, len, 0.07);
+      ctx.fill();
+      ctx.stroke();
+      line(a, b);
+      line(at(0, 0.14), at(0, -0.14));
+      line(at(len, 0.14), at(len, -0.14));
+      break;
+    case "bars":
+      line(a, b);
+      for (let t = 0.09; t < len; t += 0.18) line(at(t, 0.11), at(t, -0.11));
+      break;
+    case "curtain": {
+      ctx.beginPath();
+      for (let t = 0; t <= len + 1e-6; t += 0.02) {
+        const p = at(t, Math.sin((t / 0.25) * Math.PI * 2) * 0.07);
+        if (t === 0) ctx.moveTo(p[0], p[1]);
+        else ctx.lineTo(p[0], p[1]);
+      }
+      ctx.stroke();
+      break;
+    }
+    case "bushes": {
+      const r = 0.1;
+      let side = 1;
+      for (let t = r; t < len; t += r * 1.8) {
+        const c = at(t, 0);
+        const ang = Math.atan2(uy, ux);
+        ctx.beginPath();
+        ctx.arc(c[0], c[1], r, ang + (side > 0 ? Math.PI : 0), ang + (side > 0 ? 2 * Math.PI : Math.PI));
+        ctx.stroke();
+        side = -side;
+      }
+      break;
+    }
+    case "crayon":
+      ctx.strokeStyle = f.color;
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = 0.11;
+      ctx.setLineDash([0.22, 0.12]);
+      line(a, b);
+      break;
+  }
 }
 
 function setCamera(ctx: CanvasRenderingContext2D, cam: Camera) {

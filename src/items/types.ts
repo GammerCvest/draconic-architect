@@ -1,5 +1,5 @@
 export type ItemSet = "sketch" | "classic";
-export type ItemCategory = "furniture" | "storage" | "decor" | "features" | "nature" | "cave" | "markers";
+export type ItemCategory = "furniture" | "storage" | "decor" | "features" | "nature" | "cave" | "markers" | "doors";
 
 export interface CatalogItem {
   id: string;

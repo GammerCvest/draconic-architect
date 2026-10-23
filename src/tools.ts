@@ -2,7 +2,17 @@ import type { DrawMode, Editor, ToolId } from "./editor";
 import { lang } from "./i18n";
 import { assetInfo } from "./items/resolve";
 import { image } from "./render/images";
-import { bounds, boxesTouch, rectPolygon, translate, unionShapes, type Polygon, type Vec } from "./geometry";
+import {
+  bounds,
+  boxesTouch,
+  rectPolygon,
+  translate,
+  unionShapes,
+  wallSlot,
+  type Pair,
+  type Polygon,
+  type Vec,
+} from "./geometry";
 
 export interface PointerInfo {
   world: Vec;
@@ -384,4 +394,75 @@ export class ItemTool implements Tool {
     ctx.strokeRect(x, y, info.w, info.h);
     ctx.restore();
   }
+}
+
+export class SegmentTool implements Tool {
+  private start: Vec | null = null;
+  private end: Vec | null = null;
+
+  constructor(
+    private host: ToolHost,
+    readonly id: "door" | "barrier",
+  ) {}
+
+  down(p: PointerInfo) {
+    this.start = this.end = this.host.snap(p.world, p.shift);
+  }
+
+  move(p: PointerInfo, pressed: boolean) {
+    if (!pressed || !this.start) return;
+    this.end = this.host.snap(p.world, p.shift);
+    this.host.redraw();
+  }
+
+  up(p: PointerInfo) {
+    const { start, end } = this;
+    this.cancel();
+    if (!start || !end) return;
+    const ed = this.host.editor;
+    let seg: [Pair, Pair] | null = null;
+    if (Math.hypot(end.x - start.x, end.y - start.y) >= 0.3) {
+      seg = [
+        [start.x, start.y],
+        [end.x, end.y],
+      ];
+    } else {
+      seg = wallSlot(ed.floor(), p.world);
+    }
+    if (!seg) return;
+    if (this.id === "door") ed.addDoor(seg[0], seg[1]);
+    else ed.addBarrier(seg[0], seg[1]);
+  }
+
+  cancel() {
+    this.start = this.end = null;
+    this.host.redraw();
+  }
+
+  overlay(ctx: CanvasRenderingContext2D, zoom: number) {
+    if (!this.start || !this.end) return;
+    ctx.strokeStyle = ADD_LINE;
+    ctx.lineWidth = 3 / zoom;
+    ctx.setLineDash([6 / zoom, 4 / zoom]);
+    ctx.beginPath();
+    ctx.moveTo(this.start.x, this.start.y);
+    ctx.lineTo(this.end.x, this.end.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+export class LightTool implements Tool {
+  readonly id = "light";
+
+  constructor(private host: ToolHost) {}
+
+  down(p: PointerInfo) {
+    this.host.editor.addLight(p.world);
+  }
+
+  move() {}
+  up() {}
+  cancel() {}
+  overlay() {}
 }

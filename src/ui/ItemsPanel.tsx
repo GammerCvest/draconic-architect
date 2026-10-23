@@ -41,7 +41,9 @@ export function ItemsPanel({ editor }: { editor: Editor }) {
   if (tab === "mine") {
     entries = Object.entries(editor.doc.assets).map(([key, a]) => ({ key, src: a.data, name: a.name }));
   } else {
-    entries = CATALOG.filter((c) => c.set === tab && (category === "all" || c.category === category)).map((c) => ({
+    entries = CATALOG.filter(
+      (c) => c.set === tab && c.category !== "doors" && (category === "all" || c.category === category),
+    ).map((c) => ({
       key: BUILTIN + c.id,
       src: builtinSrc(c),
       name: c.name[lang()],
