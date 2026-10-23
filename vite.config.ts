@@ -26,7 +26,11 @@ function owlbearManifest(): Plugin {
 export default defineConfig({
   base,
   plugins: [preact(), owlbearManifest()],
-  server: { cors: { origin: /^https:\/\/(www\.)?owlbear\.rodeo$/ } },
+  server: {
+    cors: { origin: /^https:\/\/(www\.)?owlbear\.rodeo$/ },
+    // for testing in Owlbear through `cloudflared tunnel --url http://localhost:5173`
+    allowedHosts: [".trycloudflare.com"],
+  },
   build: {
     rollupOptions: {
       input: {
