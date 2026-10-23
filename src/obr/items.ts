@@ -10,6 +10,7 @@ import { whenReady } from "./table";
 import "./popover.css";
 
 setLang(lang());
+document.addEventListener("dragstart", (e) => e.preventDefault());
 
 const SETS: [ItemSet, Key][] = [
   ["sketch", "setSketch"],
@@ -90,6 +91,7 @@ function renderGrid() {
       const img = document.createElement("img");
       img.src = builtinSrc(c);
       img.loading = "lazy";
+      img.draggable = false;
       b.append(img);
       b.addEventListener("click", async () => {
         picked = c.id;
@@ -158,6 +160,7 @@ async function renderOptions() {
       b.title = id === "symbol" ? t("lightSymbol") : item.name[lang()];
       const img = document.createElement("img");
       img.src = builtinSrc(item);
+      img.draggable = false;
       b.append(img);
       b.addEventListener("click", () => set({ lightSource: id }));
       grid.append(b);

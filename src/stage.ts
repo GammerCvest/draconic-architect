@@ -19,6 +19,7 @@ import {
 } from "./tools";
 
 export const BASE_ZOOM = 48;
+export const ITEM_DRAG = "application/x-draconic-item";
 
 const SELECTION_COLORS = {
   floor: "59, 110, 168",
@@ -148,6 +149,18 @@ export class Stage {
 
   private bindPointer() {
     const c = this.canvas;
+    c.addEventListener("dragover", (e) => {
+      if (e.dataTransfer?.types.includes(ITEM_DRAG)) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      }
+    });
+    c.addEventListener("drop", (e) => {
+      const asset = e.dataTransfer?.getData(ITEM_DRAG);
+      if (!asset) return;
+      e.preventDefault();
+      this.editor.addItem(asset, this.pointerInfo(e).world);
+    });
     c.addEventListener("contextmenu", (e) => e.preventDefault());
     c.addEventListener("pointerdown", (e) => {
       c.setPointerCapture(e.pointerId);

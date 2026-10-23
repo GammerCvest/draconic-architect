@@ -5,6 +5,7 @@ import { CATALOG } from "../items/catalog";
 import { BUILTIN, builtinSrc } from "../items/resolve";
 import type { ItemCategory, ItemSet } from "../items/types";
 import { imageFileToData, pickFile } from "../style/library";
+import { ITEM_DRAG } from "../stage";
 import { say } from "./dialogs";
 
 type Tab = ItemSet | "mine";
@@ -111,8 +112,13 @@ export function ItemsPanel({ editor }: { editor: Editor }) {
             class={`item-cell${editor.itemBrush === e.key ? " active" : ""}`}
             title={e.name}
             onClick={() => editor.setItemBrush(e.key)}
+            draggable
+            onDragStart={(ev) => {
+              ev.dataTransfer?.setData(ITEM_DRAG, e.key);
+              editor.setItemBrush(e.key);
+            }}
           >
-            <img src={e.src} alt="" loading="lazy" />
+            <img src={e.src} alt="" loading="lazy" draggable={false} />
             <span>{e.name}</span>
           </button>
         ))}
