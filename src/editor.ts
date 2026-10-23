@@ -40,8 +40,9 @@ import {
 import type { MapFeatures } from "./export/uvtt";
 import { computeFog, type Fog } from "./fog";
 import { lang, t } from "./i18n";
-import { presetLight, type LightData, type LightPreset } from "./light";
-import { assetInfo, USER } from "./items/resolve";
+import { LIGHT_SOURCES, pictureFor, presetLight, sourceOf, type LightData } from "./light";
+import { catalogItem } from "./table/props";
+import { assetInfo, BUILTIN, USER } from "./items/resolve";
 import type { DrawFeature, DrawItem } from "./render/renderer";
 import type { Scene, StyledRegion } from "./render/renderer";
 import { DEFAULT_STYLE_ID, PRESETS } from "./style/presets";
@@ -58,13 +59,6 @@ const BARRIER_NAMES = {
   crayon: "barrierCrayon",
 } as const;
 
-const LIGHT_NAMES = {
-  torch: "lightTorch",
-  candle: "lightCandle",
-  brazier: "lightBrazier",
-  campfire: "lightCampfire",
-  lantern: "lightLantern",
-} as const;
 export type DrawMode = "floor" | "carve" | "room";
 
 const AUTOSAVE_KEY = "da.autosave";
@@ -86,7 +80,7 @@ export class Editor {
   settingsOpen = false;
   stylesOpen = false;
   itemBrush: string | null = null;
-  lightPreset: LightPreset = "torch";
+  lightSource = "wall-torch";
   barrierType: BarrierType = "window";
   showFog = false;
   attachPicking = false;
@@ -691,27 +685,31 @@ export class Editor {
   }
 
   addLight(at: Vec) {
+    const source = LIGHT_SOURCES.find((l) => l.id === this.lightSource);
+    const light = presetLight(source?.preset ?? "torch");
     const hit = this.pick(at, 0);
-    const light = presetLight(this.lightPreset);
     if (hit?.kind === "item") {
-      this.update(hit.id, { light });
+      this.update(hit.id, { light, asset: this.litAsset(hit.asset, true) });
       this.select([hit.id]);
       return;
     }
-    const size = 0.5;
-    const x = Math.round(at.x * 2) / 2 - size / 2;
-    const y = Math.round(at.y * 2) / 2 - size / 2;
+    const picture = catalogItem(source ? source.lit : "classic/light");
+    if (!picture) return;
+    const w = source ? picture.w : 0.5;
+    const h = source ? picture.h : 0.5;
+    const x = source ? Math.round(at.x - w / 2) : Math.round(at.x * 2) / 2 - w / 2;
+    const y = source ? Math.round(at.y - h / 2) : Math.round(at.y * 2) / 2 - h / 2;
     const item: ItemObject = {
       id: newId(),
       kind: "item",
       layer: this.activeLayer,
-      name: t(LIGHT_NAMES[this.lightPreset]),
+      name: picture.name[lang()],
       hidden: false,
       z: 0,
       group: null,
       attachedTo: null,
       style: null,
-      asset: "builtin:classic/light",
+      asset: BUILTIN + picture.id,
       tint: true,
       light,
       blocksLight: false,
@@ -719,9 +717,9 @@ export class Editor {
         [
           [
             [x, y],
-            [x + size, y],
-            [x + size, y + size],
-            [x, y + size],
+            [x + w, y],
+            [x + w, y + h],
+            [x, y + h],
           ],
         ],
       ],
@@ -729,15 +727,20 @@ export class Editor {
     this.addOnActiveLayer(item);
   }
 
+  private litAsset(asset: string, lit: boolean): string {
+    return asset.startsWith(BUILTIN) ? BUILTIN + pictureFor(asset.slice(BUILTIN.length), lit) : asset;
+  }
+
   setLight(id: string, patch: Partial<LightData> | null) {
     const o = this.byId(id);
     if (o?.kind !== "item") return;
-    const light = patch === null ? null : { ...(o.light ?? presetLight(this.lightPreset)), ...patch };
-    this.update(id, { light });
+    const source = sourceOf(o.asset.slice(BUILTIN.length));
+    const light = patch === null ? null : { ...(o.light ?? presetLight(source?.preset ?? "torch")), ...patch };
+    this.update(id, { light, asset: this.litAsset(o.asset, light?.lit ?? false) });
   }
 
-  setLightPreset(preset: LightPreset) {
-    this.lightPreset = preset;
+  setLightSource(id: string) {
+    this.lightSource = id;
     this.emit();
   }
 

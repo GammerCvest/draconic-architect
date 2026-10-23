@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { BarrierObject, BarrierType, DoorObject, Group, ItemObject, Layer, MapObject } from "../doc";
-import { LIGHT_PRESETS, type LightPreset } from "../light";
+import { LIGHT_PRESETS, LIGHT_SOURCES, type LightPreset } from "../light";
+import { catalogItem } from "../table/props";
 import { CATALOG } from "../items/catalog";
-import { BUILTIN } from "../items/resolve";
+import { BUILTIN, builtinSrc } from "../items/resolve";
 import type { DrawMode, Editor, ToolId } from "../editor";
 import { lang, setLang, t, type Key } from "../i18n";
 import { BASE_ZOOM, type Stage } from "../stage";
@@ -820,17 +821,25 @@ function ToolOptions({ editor }: { editor: Editor }) {
         </>
       ) : (
         <>
-          <h2>{t("lightPresets")}</h2>
-          <div class="segmented wrap">
-            {LIGHT_PRESET_KEYS.map(([preset, key]) => (
-              <button
-                key={preset}
-                class={editor.lightPreset === preset ? "active" : ""}
-                onClick={() => editor.setLightPreset(preset)}
-              >
-                {t(key)}
-              </button>
-            ))}
+          <h2>{t("lightSources")}</h2>
+          <div class="item-grid">
+            {[
+              ...LIGHT_SOURCES.map((l) => ({ id: l.id, item: catalogItem(l.lit) })),
+              { id: "symbol", item: catalogItem("classic/light") },
+            ].map(
+              ({ id, item }) =>
+                item && (
+                  <button
+                    key={id}
+                    class={`item-cell${editor.lightSource === id ? " active" : ""}`}
+                    title={item.name[lang()]}
+                    onClick={() => editor.setLightSource(id)}
+                  >
+                    <img src={builtinSrc(item)} alt="" />
+                    <span>{id === "symbol" ? t("lightSymbol") : item.name[lang()]}</span>
+                  </button>
+                ),
+            )}
           </div>
           <div class="muted small">{t("hintLight")}</div>
         </>

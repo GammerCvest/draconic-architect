@@ -10,3 +10,6 @@ Attribution is not required; it is given here with thanks.
 | `classic/`| [Classic Dungeon Map Symbols](https://markgosbell.itch.io/classic-dungeon-map-symbols) and [Classic Cave Map Symbols](https://markgosbell.itch.io/classic-cave-map-symbols) (high-resolution sets) |
 
 Files were renamed and re-saved as optimised PNG; the drawings themselves are unchanged.
+
+The light sources in `sketch/` (wall and standing torches, candle, candelabra, brazier, fire pit and lantern,
+lit and unlit) were drawn for Draconic Architect and are covered by the project's license.

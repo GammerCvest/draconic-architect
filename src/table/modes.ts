@@ -1,7 +1,7 @@
-import OBR, { buildImage, Command, isImage, type ToolEvent, type Vector2 } from "@owlbear-rodeo/sdk";
+import OBR, { Command, isImage, type Image, type ToolEvent, type Vector2 } from "@owlbear-rodeo/sdk";
 import { distToSegment, wallSlot, type Pair } from "../geometry";
-import { t } from "../i18n";
-import { presetLight, type LightPreset } from "../light";
+import { lang, t } from "../i18n";
+import { LIGHT_SOURCES, presetLight, sourceOf } from "../light";
 import { floorOf } from "./art";
 import { buildBarrier, buildDoor, doorData, isDoor, segmentOf, setDoorOpen } from "./features";
 import {
@@ -22,7 +22,7 @@ import {
   type BarrierData,
   type DoorData,
 } from "./ids";
-import { catalogItem, propAt } from "./props";
+import { catalogItem, PROP, propAt, swapPicture } from "./props";
 import { sceneStyle } from "./reconcile";
 import { isSource } from "./source";
 import { cellPoint, hidePreview, icon, showPreview } from "./tools";
@@ -33,14 +33,6 @@ const BARRIER_NAMES = {
   curtain: "barrierCurtain",
   bushes: "barrierBushes",
   crayon: "barrierCrayon",
-} as const;
-
-const LIGHT_NAMES = {
-  torch: "lightTorch",
-  candle: "lightCandle",
-  brazier: "lightBrazier",
-  campfire: "lightCampfire",
-  lantern: "lightLantern",
 } as const;
 
 async function openOptions(mode: string, height: number) {
@@ -143,34 +135,37 @@ function lightMode() {
     icons: [{ icon: icon("light"), label: t("toolLight"), filter: { activeTools: [TOOL] } }],
     cursors: [{ cursor: "crosshair" }],
     async onActivate() {
-      await openOptions("light", 300);
+      await openOptions("light", 360);
     },
     async onDeactivate() {
       await OBR.popover.close(ITEMS_POPOVER);
     },
     async onToolClick(context, event) {
-      const preset = (context.metadata.lightPreset as LightPreset) ?? "torch";
-      const light = presetLight(preset, context.metadata.newLightsLit !== false);
+      const source = LIGHT_SOURCES.find((l) => l.id === context.metadata.lightSource) ?? null;
+      const lit = context.metadata.newLightsLit !== false;
+      const light = presetLight(source?.preset ?? "torch", lit);
       if (event.target && isImage(event.target) && !event.target.locked) {
-        await OBR.scene.items.updateItems([event.target.id], (d) => d.forEach((i) => (i.metadata[LIGHT] = light)));
+        await OBR.scene.items.updateItems<Image>([event.target.id], (drafts) =>
+          drafts.forEach((d) => {
+            d.metadata[LIGHT] = light;
+            swapPicture(d, lit);
+          }),
+        );
         return;
       }
-      const symbol = catalogItem("classic/light");
-      if (!symbol) return;
+      const picture = catalogItem(source ? (lit ? source.lit : source.unlit) : "classic/light");
+      if (!picture) return;
       const dpi = await OBR.scene.grid.getDpi();
       const at = { x: event.pointerPosition.x / dpi, y: event.pointerPosition.y / dpi };
-      const prop = propAt(symbol, at, dpi, t(LIGHT_NAMES[preset]));
-      const half = 0.25;
-      const x = Math.round(at.x * 2) / 2;
-      const y = Math.round(at.y * 2) / 2;
-      const item = buildImage(prop.image, prop.grid)
-        .position({ x: (x - half) * dpi, y: (y - half) * dpi })
-        .scale({ x: 0.5, y: 0.5 })
-        .layer("PROP")
-        .name(prop.name)
-        .metadata({ [LIGHT]: light })
-        .build();
-      await OBR.scene.items.addItems([item]);
+      const prop = propAt(picture, at, dpi, picture.name[lang()]);
+      if (!source) {
+        const x = Math.round(at.x * 2) / 2 - 0.25;
+        const y = Math.round(at.y * 2) / 2 - 0.25;
+        prop.position = { x: x * dpi, y: y * dpi };
+        prop.scale = { x: 0.5, y: 0.5 };
+      }
+      prop.metadata[LIGHT] = light;
+      await OBR.scene.items.addItems([prop]);
     },
   });
 }
@@ -321,9 +316,14 @@ export async function registerFeatureMenus() {
     ],
     async (ids, first) => {
       const current = first[LIGHT] as { lit: boolean } | undefined;
-      await OBR.scene.items.updateItems(ids, (d) =>
+      const lit = current ? !current.lit : true;
+      await OBR.scene.items.updateItems<Image>(ids, (d) =>
         d.forEach((i) => {
-          i.metadata[LIGHT] = current ? { ...(i.metadata[LIGHT] as object), lit: !current.lit } : presetLight("torch");
+          const id = typeof i.metadata[PROP] === "string" ? (i.metadata[PROP] as string) : "";
+          i.metadata[LIGHT] = current
+            ? { ...(i.metadata[LIGHT] as object), lit }
+            : presetLight(sourceOf(id)?.preset ?? "torch");
+          swapPicture(i, lit);
         }),
       );
     },
@@ -338,10 +338,11 @@ export async function registerFeatureMenus() {
       },
     ],
     async (ids) => {
-      await OBR.scene.items.updateItems(ids, (d) =>
+      await OBR.scene.items.updateItems<Image>(ids, (d) =>
         d.forEach((i) => {
           delete i.metadata[LIGHT];
           delete i.metadata[DYNAMIC_FOG_LIGHT];
+          swapPicture(i, false);
         }),
       );
     },

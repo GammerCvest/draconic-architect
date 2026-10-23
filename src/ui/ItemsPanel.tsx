@@ -20,6 +20,7 @@ const CATEGORIES: [ItemCategory | "all", Key][] = [
   ["storage", "catStorage"],
   ["decor", "catDecor"],
   ["features", "catFeatures"],
+  ["lighting", "catLighting"],
   ["nature", "catNature"],
   ["cave", "catCave"],
   ["markers", "catMarkers"],
@@ -42,7 +43,11 @@ export function ItemsPanel({ editor }: { editor: Editor }) {
     entries = Object.entries(editor.doc.assets).map(([key, a]) => ({ key, src: a.data, name: a.name }));
   } else {
     entries = CATALOG.filter(
-      (c) => c.set === tab && c.category !== "doors" && (category === "all" || c.category === category),
+      (c) =>
+        c.set === tab &&
+        c.category !== "doors" &&
+        c.category !== "lights" &&
+        (category === "all" || c.category === category),
     ).map((c) => ({
       key: BUILTIN + c.id,
       src: builtinSrc(c),

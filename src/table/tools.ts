@@ -291,7 +291,7 @@ export async function registerTools() {
       newDoorsPlayers: false,
       barrierType: "window",
       barrierBlocks: false,
-      lightPreset: "torch",
+      lightSource: "wall-torch",
       newLightsLit: true,
     },
   });

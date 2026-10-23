@@ -15,7 +15,7 @@ or use the full editor and export PNG or UVTT.
   Mix styles in one map or make your own with paper and floor textures and stamped marks.
 - Over 280 top-down furniture pieces and props, redrawn in the ink of your map's style.
 - Doors (open or closed, and whether players may open them), windows, bars, curtains, bushes and
-  crayon barriers that let sight through or block it; light sources with presets; items that block light.
+  crayon barriers that let sight through or block it; light sources (torches, candles, braziers, fire pits, lanterns) that can be lit or put out; items that block light.
 - Draw straight on an Owlbear Rodeo table, or bring a finished map over from the editor.
 - Layers, stacking priority, linked groups, attaching one object to another, merging shapes.
 - Export to PNG, or to UVTT (`.dd2vtt`) for Smoke & Spectre, Foundry and other virtual tabletops.

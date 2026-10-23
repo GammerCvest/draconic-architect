@@ -31,3 +31,29 @@ export function dynamicFogLight(light: LightData, dpi: number) {
     lightType: light.dim ? "SECONDARY" : "PRIMARY",
   };
 }
+
+export interface LightSource {
+  id: string;
+  preset: LightPreset;
+  lit: string;
+  unlit: string;
+}
+
+export const LIGHT_SOURCES: LightSource[] = [
+  { id: "wall-torch", preset: "torch", lit: "sketch/wall-torch", unlit: "sketch/wall-torch-unlit" },
+  { id: "standing-torch", preset: "torch", lit: "sketch/standing-torch", unlit: "sketch/standing-torch-unlit" },
+  { id: "candle", preset: "candle", lit: "sketch/candle", unlit: "sketch/candle-unlit" },
+  { id: "candelabra", preset: "candle", lit: "sketch/candelabra", unlit: "sketch/candelabra-unlit" },
+  { id: "brazier", preset: "brazier", lit: "sketch/brazier", unlit: "sketch/brazier-unlit" },
+  { id: "firepit", preset: "campfire", lit: "sketch/firepit", unlit: "sketch/firepit-unlit" },
+  { id: "lantern", preset: "lantern", lit: "sketch/lantern", unlit: "sketch/lantern-unlit" },
+];
+
+export function sourceOf(catalogId: string): LightSource | undefined {
+  return LIGHT_SOURCES.find((s) => s.lit === catalogId || s.unlit === catalogId);
+}
+
+export function pictureFor(catalogId: string, lit: boolean): string {
+  const source = sourceOf(catalogId);
+  return source ? (lit ? source.lit : source.unlit) : catalogId;
+}

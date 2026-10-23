@@ -2,6 +2,7 @@ import { buildImage, type Image } from "@owlbear-rodeo/sdk";
 import type { Pair } from "../geometry";
 import { CATALOG } from "../items/catalog";
 import { builtinSrc } from "../items/resolve";
+import { pictureFor } from "../light";
 import type { CatalogItem } from "../items/types";
 import { id } from "./ids";
 
@@ -13,6 +14,19 @@ export function catalogItem(itemId: string): CatalogItem | undefined {
   return byId.get(itemId);
 }
 
+export function catalogUrl(item: CatalogItem): string {
+  return new URL(builtinSrc(item), location.href).href;
+}
+
+export function swapPicture(draft: Image, lit: boolean) {
+  const current = draft.metadata[PROP];
+  if (typeof current !== "string") return;
+  const next = catalogItem(pictureFor(current, lit));
+  if (!next || next.id === current) return;
+  draft.metadata[PROP] = next.id;
+  draft.image.url = catalogUrl(next);
+}
+
 export function buildProp(item: CatalogItem, corners: [Pair, Pair, Pair], dpi: number, name: string): Image {
   const [p0, p1, p3] = corners;
   const ux = p1[0] - p0[0];
@@ -22,7 +36,7 @@ export function buildProp(item: CatalogItem, corners: [Pair, Pair, Pair], dpi: n
   const width = Math.hypot(ux, uy);
   const height = Math.hypot(vx, vy);
   const mirrored = ux * vy - uy * vx < 0;
-  const url = new URL(builtinSrc(item), location.href).href;
+  const url = catalogUrl(item);
   return buildImage(
     { url, mime: "image/png", width: item.px[0], height: item.px[1] },
     { dpi: item.px[0] / item.w, offset: { x: 0, y: 0 } },

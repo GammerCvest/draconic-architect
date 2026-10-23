@@ -1,6 +1,8 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { lang, setLang, t, type Key } from "../i18n";
 import { CATALOG } from "../items/catalog";
+import { LIGHT_SOURCES } from "../light";
+import { catalogItem } from "../table/props";
 import { builtinSrc } from "../items/resolve";
 import type { ItemCategory, ItemSet } from "../items/types";
 import { TOOL } from "../table/ids";
@@ -19,6 +21,7 @@ const CATEGORIES: [ItemCategory | "all", Key][] = [
   ["storage", "catStorage"],
   ["decor", "catDecor"],
   ["features", "catFeatures"],
+  ["lighting", "catLighting"],
   ["nature", "catNature"],
   ["cave", "catCave"],
   ["markers", "catMarkers"],
@@ -75,6 +78,7 @@ function renderGrid() {
     (c) =>
       c.set === set &&
       c.category !== "doors" &&
+      c.category !== "lights" &&
       (category === "all" || c.category === category) &&
       c.name[lang()].toLowerCase().includes(q),
   );
@@ -106,13 +110,6 @@ const BARRIERS: [string, Key][] = [
   ["curtain", "barrierCurtain"],
   ["bushes", "barrierBushes"],
   ["crayon", "barrierCrayon"],
-];
-const LIGHTS: [string, Key][] = [
-  ["torch", "lightTorch"],
-  ["candle", "lightCandle"],
-  ["brazier", "lightBrazier"],
-  ["campfire", "lightCampfire"],
-  ["lantern", "lightLantern"],
 ];
 
 async function renderOptions() {
@@ -147,12 +144,25 @@ async function renderOptions() {
       check("barrierBlocks", "blocksSight"),
     );
   } else {
-    root.replaceChildren(
-      hint("tableLightHint"),
-      chips(LIGHTS, String(meta.lightPreset ?? "torch"), (v) => set({ lightPreset: v })),
-      check("newLightsLit", "newLightsLit"),
-      hint("hintLight"),
-    );
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    const current = String(meta.lightSource ?? "wall-torch");
+    const sources = [
+      ...LIGHT_SOURCES.map((l) => ({ id: l.id, item: catalogItem(l.lit) })),
+      { id: "symbol", item: catalogItem("classic/light") },
+    ];
+    for (const { id, item } of sources) {
+      if (!item) continue;
+      const b = document.createElement("button");
+      b.className = id === current ? "cell active" : "cell";
+      b.title = id === "symbol" ? t("lightSymbol") : item.name[lang()];
+      const img = document.createElement("img");
+      img.src = builtinSrc(item);
+      b.append(img);
+      b.addEventListener("click", () => set({ lightSource: id }));
+      grid.append(b);
+    }
+    root.replaceChildren(hint("tableLightHint"), grid, check("newLightsLit", "newLightsLit"), hint("hintLight"));
   }
 }
 
