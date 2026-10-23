@@ -1,6 +1,6 @@
 ---
 title: Draconic Architect
-description: Draw pencil-style dungeon maps and send them to the table with walls for dynamic fog
+description: Draw pencil-style dungeon maps right on the table, with walls for dynamic fog
 author: GammerCvest
 image: https://raw.githubusercontent.com/GammerCvest/draconic-architect/main/docs/images/header.jpg
 tags:
@@ -12,23 +12,26 @@ learn-more: https://github.com/GammerCvest/draconic-architect
 
 # Draconic Architect
 
-Draw dungeon maps that look sketched in pencil, then send them to your table with walls for dynamic fog.
+Draw dungeon maps that look sketched in pencil, right on the table. Walls for dynamic fog are made as you draw.
 
-## Drawing a map
+## Drawing on the table
 
-Open Draconic Architect from the extensions menu. The editor opens over the table.
+Pick the Draconic Architect tool in the toolbar.
 
-- Draw floors with the rectangle, polygon or cell brush tools. Hold Ctrl to cut out instead.
-- Add furniture and props with the Items tool (I).
-- Pick a look in Styles: pencil sketch, ink and stipple, blueprint, parchment and more.
+- Rectangle, Polygon and Cell brush draw rooms. The switch next to them cuts out instead; Ctrl does the
+  opposite while drawing, Shift skips snapping.
+- Items opens a catalogue of over 280 top-down furniture pieces and props. Pick one and click the map.
+- Move, turn, delete and undo with Owlbear's own tools; the pencil look and the Dynamic Fog walls follow.
+
+Choose the map style in the extension's menu: pencil sketch, ink and stipple, blueprint, parchment and more.
+
+## The full editor
+
+Open editor in the extension's menu brings up the full editor with every style and feature.
+To this scene moves the map onto the table as editable rooms and furniture; As a picture places the
+finished image; New scene creates a separate scene. Maps also export to PNG and UVTT for Smoke & Spectre
+and other tabletops.
 
 ![The editor](https://raw.githubusercontent.com/GammerCvest/draconic-architect/main/docs/images/editor.jpg)
-
-## Sending it to the table
-
-Press **To table**. A new scene is created with the map as its background and walls along every room
-outline, ready for dynamic fog.
-
-You can also export a PNG, or a UVTT file for Smoke & Spectre and other tabletops.
 
 ![The same map in three styles](https://raw.githubusercontent.com/GammerCvest/draconic-architect/main/docs/images/styles.jpg)

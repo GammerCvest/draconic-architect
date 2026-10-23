@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "manifest_version": 1,
   "author": "GammerCvest",
-  "description": "Draw pencil-style dungeon maps and send them to the table with walls for dynamic fog.",
+  "description": "Draw pencil-style dungeon maps right on the table, with walls for dynamic fog.",
   "action": {
     "title": "Draconic Architect",
     "icon": "{{base}}icon.svg",
