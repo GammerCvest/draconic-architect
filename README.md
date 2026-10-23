@@ -14,6 +14,8 @@ or use the full editor and export PNG or UVTT.
 - Several looks: pencil sketch, ink and stipple, blueprint, parchment with contour lines and more.
   Mix styles in one map or make your own with paper and floor textures and stamped marks.
 - Over 280 top-down furniture pieces and props, redrawn in the ink of your map's style.
+- Doors (open or closed, and whether players may open them), windows, bars, curtains, bushes and
+  crayon barriers that let sight through or block it; light sources with presets; items that block light.
 - Draw straight on an Owlbear Rodeo table, or bring a finished map over from the editor.
 - Layers, stacking priority, linked groups, attaching one object to another, merging shapes.
 - Export to PNG, or to UVTT (`.dd2vtt`) for Smoke & Spectre, Foundry and other virtual tabletops.
@@ -39,10 +41,16 @@ Pick the **Draconic Architect** tool in the toolbar (GM only):
   makes cut-outs instead. Hold Ctrl for the opposite, Shift to skip snapping. Polygons close with a
   double click or Enter.
 - **Items** opens the furniture catalogue; pick something and click the map to place it.
+- **Doors**: click by a wall for a one-cell door, or drag; click a door to open or close it.
+  Right-click a door to let players open it — they get a small Doors tool of their own.
+- **Windows, bars, curtains**: pick the kind and whether it blocks sight, then click by a wall or drag.
+- **Light**: pick a preset (torch, candle, brazier, campfire, lantern) and click an item to make it glow,
+  or empty space to place a light. Right-click any item to light it, put it out, or make it block light.
 - Rooms and items are ordinary scene items: move, turn, delete and undo them with Owlbear's own tools.
   The pencil look and the fog walls for Dynamic Fog are redrawn around them automatically.
 
-The map style for the scene is chosen in the extension's menu.
+The map style and the dynamic fog switch for the scene are in the extension's menu. Lights use the
+Dynamic Fog extension, which needs to be installed too.
 
 ### Using the full editor
 

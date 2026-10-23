@@ -21,7 +21,11 @@ Pick the Draconic Architect tool in the toolbar.
 - Rectangle, Polygon and Cell brush draw rooms. The switch next to them cuts out instead; Ctrl does the
   opposite while drawing, Shift skips snapping.
 - Items opens a catalogue of over 280 top-down furniture pieces and props. Pick one and click the map.
-- Move, turn, delete and undo with Owlbear's own tools; the pencil look and the Dynamic Fog walls follow.
+- Doors open and close with a click, and the GM decides which ones players may open themselves.
+- Windows, bars, curtains, bushes and crayon barriers either let sight through or block it.
+- Light sources with presets (torch, candle, brazier, campfire, lantern) and items that block light,
+  through the Dynamic Fog extension.
+- Move, turn, delete and undo with Owlbear's own tools; the pencil look and the fog walls follow.
 
 Choose the map style in the extension's menu: pencil sketch, ink and stipple, blueprint, parchment and more.
 
