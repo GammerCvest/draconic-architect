@@ -12,9 +12,10 @@ import { lang, t } from "../i18n";
 import { ACTION_CARVE, id, ITEMS_POPOVER, MODE_BRUSH, MODE_ITEM, MODE_POLYGON, MODE_RECT, TOOL } from "./ids";
 import { catalogItem, propAt } from "./props";
 import { sceneStyle } from "./reconcile";
+import { featureModes, registerFeatureMenus, registerPlayerTool } from "./modes";
 import { buildSource } from "./source";
 
-const icon = (name: string) => `${import.meta.env.BASE_URL}tools/${name}.svg`;
+export const icon = (name: string) => `${import.meta.env.BASE_URL}tools/${name}.svg`;
 const PREVIEW = id("preview");
 const ADD = "#3b6ea8";
 const CARVE = "#b0413e";
@@ -23,7 +24,7 @@ function carving(context: ToolContext, event?: { ctrlKey: boolean }) {
   return Boolean(context.metadata.carve) !== Boolean(event?.ctrlKey);
 }
 
-async function cellPoint(event: ToolEvent, dpi: number): Promise<Vector2> {
+export async function cellPoint(event: ToolEvent, dpi: number): Promise<Vector2> {
   const p = event.pointerPosition;
   if (event.shiftKey) return { x: p.x / dpi, y: p.y / dpi };
   return { x: Math.round(p.x / dpi), y: Math.round(p.y / dpi) };
@@ -41,7 +42,7 @@ function commandsOf(shape: MultiPolygon, dpi: number, close = true): PathCommand
 }
 
 let previewShown = false;
-async function showPreview(commands: PathCommand[], carve: boolean) {
+export async function showPreview(commands: PathCommand[], carve: boolean) {
   const color = carve ? CARVE : ADD;
   if (previewShown) {
     await OBR.scene.local.updateItems<Path>(
@@ -71,7 +72,7 @@ async function showPreview(commands: PathCommand[], carve: boolean) {
   await OBR.scene.local.addItems([preview]);
 }
 
-async function hidePreview() {
+export async function hidePreview() {
   if (!previewShown) return;
   previewShown = false;
   await OBR.scene.local.deleteItems([PREVIEW]);
@@ -285,9 +286,16 @@ export async function registerTools() {
     id: TOOL,
     icons: [{ icon: icon("architect"), label: t("appName"), filter: { roles: ["GM"] } }],
     defaultMode: MODE_RECT,
-    defaultMetadata: { carve: false },
+    defaultMetadata: {
+      carve: false,
+      newDoorsPlayers: false,
+      barrierType: "window",
+      barrierBlocks: false,
+      lightPreset: "torch",
+      newLightsLit: true,
+    },
   });
-  await Promise.all([rectMode(), polygonMode(), brushMode(), itemMode()]);
+  await Promise.all([rectMode(), polygonMode(), brushMode(), itemMode(), ...featureModes()]);
   await OBR.tool.createAction({
     id: ACTION_CARVE,
     icons: [
@@ -306,4 +314,6 @@ export async function registerTools() {
       await OBR.tool.setMetadata(TOOL, { carve: !context.metadata.carve });
     },
   });
+  await registerPlayerTool();
+  await registerFeatureMenus();
 }

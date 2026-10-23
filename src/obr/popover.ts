@@ -1,7 +1,7 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { lang, setLang, t, type Key } from "../i18n";
 import { PRESETS } from "../style/presets";
-import { STYLE } from "../table/ids";
+import { FOG_OFF, STYLE } from "../table/ids";
 import { sceneStyle } from "../table/reconcile";
 import { EDITOR_MODAL, whenReady } from "./table";
 import "./popover.css";
@@ -22,6 +22,13 @@ for (const p of PRESETS) style.append(new Option(t(p.name as Key), p.id));
 style.addEventListener("change", () => OBR.scene.setMetadata({ [STYLE]: style.value }));
 styleLabel.append(style);
 
+const fogLabel = document.createElement("label");
+fogLabel.className = "check";
+const fog = document.createElement("input");
+fog.type = "checkbox";
+fog.addEventListener("change", () => OBR.scene.setMetadata({ [FOG_OFF]: !fog.checked }));
+fogLabel.append(fog, t("tableFog"));
+
 const editorHint = document.createElement("p");
 editorHint.textContent = t("obrHint");
 const open = document.createElement("button");
@@ -32,12 +39,16 @@ open.addEventListener("click", async () => {
   await OBR.action.close();
 });
 
-root.append(title, tableHint, styleLabel, editorHint, open);
+root.append(title, tableHint, styleLabel, fogLabel, editorHint, open);
 
 whenReady().then(async () => {
   const sync = async () => {
-    style.disabled = !(await OBR.scene.isReady()) || (await OBR.player.getRole()) !== "GM";
-    if (await OBR.scene.isReady()) style.value = (await sceneStyle()).id;
+    const ready = await OBR.scene.isReady();
+    style.disabled = fog.disabled = !ready || (await OBR.player.getRole()) !== "GM";
+    if (ready) {
+      style.value = (await sceneStyle()).id;
+      fog.checked = (await OBR.scene.getMetadata())[FOG_OFF] !== true;
+    }
   };
   await sync();
   OBR.scene.onReadyChange(sync);

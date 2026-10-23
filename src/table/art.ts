@@ -1,5 +1,5 @@
 import { buildPath, Command, type Item, type Path, type PathCommand } from "@owlbear-rodeo/sdk";
-import { boundarySegments, bounds, subtractShapes, unionShapes, type MultiPolygon } from "../geometry";
+import { boundarySegments, bounds, subtractShapes, unionShapes, type MultiPolygon, type Pair } from "../geometry";
 import { buildWalls } from "../render/pencil";
 import { buildShade } from "../render/shade";
 import type { MapStyle } from "../style/types";
@@ -43,7 +43,7 @@ function strokes(pen: CommandPen, color: string, width: number, opacity: number,
   );
 }
 
-export function buildArt(floor: MultiPolygon, style: MapStyle, dpi: number): Item[] {
+export function buildArt(floor: MultiPolygon, style: MapStyle, dpi: number, fogLines: Pair[][]): Item[] {
   const box = bounds(floor);
   if (!box) return [];
   const items: Item[] = [];
@@ -80,29 +80,22 @@ export function buildArt(floor: MultiPolygon, style: MapStyle, dpi: number): Ite
     );
   });
 
-  for (const poly of floor) {
-    for (const ring of poly) {
-      const commands: PathCommand[] = ring.map(([x, y], i) => [
-        i === 0 ? Command.MOVE : Command.LINE,
-        x * dpi,
-        y * dpi,
-      ]);
-      commands.push([Command.CLOSE]);
-      items.push(
-        buildPath()
-          .commands(commands)
-          .layer("FOG")
-          .fillOpacity(0)
-          .strokeColor("#000000")
-          .strokeOpacity(1)
-          .strokeWidth(2)
-          .locked(true)
-          .disableHit(true)
-          .name("Wall")
-          .metadata({ [ART]: true })
-          .build(),
-      );
-    }
+  for (const line of fogLines) {
+    const commands: PathCommand[] = line.map(([x, y], i) => [i === 0 ? Command.MOVE : Command.LINE, x * dpi, y * dpi]);
+    items.push(
+      buildPath()
+        .commands(commands)
+        .layer("FOG")
+        .fillOpacity(0)
+        .strokeColor("#000000")
+        .strokeOpacity(1)
+        .strokeWidth(2)
+        .locked(true)
+        .disableHit(true)
+        .name("Wall")
+        .metadata({ [ART]: true })
+        .build(),
+    );
   }
   return items;
 }

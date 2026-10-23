@@ -3,7 +3,9 @@ import type { Editor } from "../editor";
 import { lang } from "../i18n";
 import { BUILTIN } from "../items/resolve";
 import { PRESETS } from "../style/presets";
-import { STYLE } from "./ids";
+import { quadSegment } from "../geometry";
+import { buildBarrier, buildDoor } from "./features";
+import { BLOCKS, FOG_OFF, LIGHT, STYLE } from "./ids";
 import { buildProp, catalogItem } from "./props";
 import { sceneStyle } from "./reconcile";
 import { buildSource } from "./source";
@@ -17,7 +19,10 @@ export interface TransferResult {
 export async function transferToScene(editor: Editor): Promise<TransferResult> {
   const doc = editor.doc;
   const styleId = editor.style(doc.settings.style).id;
-  if (PRESETS.some((p) => p.id === styleId)) await OBR.scene.setMetadata({ [STYLE]: styleId });
+  await OBR.scene.setMetadata({
+    ...(PRESETS.some((p) => p.id === styleId) ? { [STYLE]: styleId } : {}),
+    [FOG_OFF]: !doc.settings.fog,
+  });
   const [dpi, style] = await Promise.all([OBR.scene.grid.getDpi(), sceneStyle()]);
   const now = Date.now();
   const out: Item[] = [];
@@ -29,6 +34,14 @@ export async function transferToScene(editor: Editor): Promise<TransferResult> {
       source.zIndex = now + out.length;
       out.push(source);
       result.rooms++;
+    } else if (o.kind === "door" || o.kind === "barrier") {
+      const [a, b] = quadSegment(o.shape);
+      const item =
+        o.kind === "door"
+          ? buildDoor(a, b, o.open, o.players, dpi, style, o.name)
+          : buildBarrier(a, b, { type: o.barrier, blocks: o.blocksSight, color: o.color }, dpi, style, o.name);
+      out.push(item);
+      result.items++;
     } else if (o.kind === "item") {
       const item = o.asset.startsWith(BUILTIN) ? catalogItem(o.asset.slice(BUILTIN.length)) : undefined;
       const ring = o.shape[0]?.[0];
@@ -37,6 +50,8 @@ export async function transferToScene(editor: Editor): Promise<TransferResult> {
         continue;
       }
       const prop = buildProp(item, [ring[0], ring[1], ring[3]], dpi, o.name || item.name[lang()]);
+      if (o.light) prop.metadata[LIGHT] = o.light;
+      if (o.blocksLight) prop.metadata[BLOCKS] = true;
       prop.zIndex = now + out.length;
       out.push(prop);
       result.items++;

@@ -98,7 +98,66 @@ function renderGrid() {
   );
 }
 
-render();
+const mode = new URLSearchParams(location.search).get("mode");
+
+const BARRIERS: [string, Key][] = [
+  ["window", "barrierWindow"],
+  ["bars", "barrierBars"],
+  ["curtain", "barrierCurtain"],
+  ["bushes", "barrierBushes"],
+  ["crayon", "barrierCrayon"],
+];
+const LIGHTS: [string, Key][] = [
+  ["torch", "lightTorch"],
+  ["candle", "lightCandle"],
+  ["brazier", "lightBrazier"],
+  ["campfire", "lightCampfire"],
+  ["lantern", "lightLantern"],
+];
+
+async function renderOptions() {
+  await whenReady();
+  const meta = (await OBR.tool.getMetadata(TOOL)) ?? {};
+  const set = async (update: Record<string, unknown>) => {
+    Object.assign(meta, update);
+    await OBR.tool.setMetadata(TOOL, update);
+    await renderOptions();
+  };
+  const check = (key: string, label: Key) => {
+    const l = document.createElement("label");
+    l.className = "check";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = meta[key] === true || (key === "newLightsLit" && meta[key] !== false);
+    box.addEventListener("change", () => set({ [key]: box.checked }));
+    l.append(box, t(label));
+    return l;
+  };
+  const hint = (key: Key) => {
+    const p = document.createElement("p");
+    p.textContent = t(key);
+    return p;
+  };
+  if (mode === "door") {
+    root.replaceChildren(hint("tableDoorHint"), check("newDoorsPlayers", "newDoorsPlayers"));
+  } else if (mode === "barrier") {
+    root.replaceChildren(
+      hint("tableBarrierHint"),
+      chips(BARRIERS, String(meta.barrierType ?? "window"), (v) => set({ barrierType: v })),
+      check("barrierBlocks", "blocksSight"),
+    );
+  } else {
+    root.replaceChildren(
+      hint("tableLightHint"),
+      chips(LIGHTS, String(meta.lightPreset ?? "torch"), (v) => set({ lightPreset: v })),
+      check("newLightsLit", "newLightsLit"),
+      hint("hintLight"),
+    );
+  }
+}
+
+if (mode) void renderOptions();
+else render();
 whenReady().then(async () => {
   picked = String((await OBR.tool.getMetadata(TOOL))?.item ?? "");
   renderGrid();
