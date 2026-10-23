@@ -29,7 +29,6 @@ function mapFile(name: string, png: Blob): File {
   return new File([png], `${name}.png`, { type: "image/png" });
 }
 
-// Dynamic Fog (and extensions built on it) turn drawings on the fog layer into walls.
 function fogWalls(floor: MultiPolygon, frame: ExportFrame, origin: Vector2, dpi: number): Item[] {
   return wallLines(floor).map((line) => {
     const commands: PathCommand[] = line.map((p, i) => [
@@ -63,10 +62,6 @@ export async function sendNewScene(name: string, png: Blob, floor: MultiPolygon,
   await OBR.assets.uploadScenes([scene]);
 }
 
-/**
- * Owlbear only places pictures that are in the user's storage, so the map is uploaded first and
- * then picked from Owlbear's own image picker. Returns false when the user closes the picker.
- */
 export async function placeOnScene(name: string, png: Blob, floor: MultiPolygon, frame: ExportFrame): Promise<boolean> {
   await whenReady();
   if (!(await OBR.scene.isReady())) throw new Error("no scene open");

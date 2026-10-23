@@ -13,10 +13,6 @@ export function catalogItem(itemId: string): CatalogItem | undefined {
   return byId.get(itemId);
 }
 
-/**
- * A catalogue picture placed by its top-left, top-right and bottom-left corners in grid cells,
- * so the editor's turns, flips and resizes carry over.
- */
 export function buildProp(item: CatalogItem, corners: [Pair, Pair, Pair], dpi: number, name: string): Image {
   const [p0, p1, p3] = corners;
   const ux = p1[0] - p0[0];
@@ -40,7 +36,6 @@ export function buildProp(item: CatalogItem, corners: [Pair, Pair, Pair], dpi: n
     .build();
 }
 
-/** The picture centred on `at` (grid cells), its corner on the grid. */
 export function propAt(item: CatalogItem, at: { x: number; y: number }, dpi: number, name: string): Image {
   const x = Math.round(at.x - item.w / 2);
   const y = Math.round(at.y - item.h / 2);

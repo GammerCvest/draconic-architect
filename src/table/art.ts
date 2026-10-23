@@ -7,7 +7,6 @@ import { ART } from "./ids";
 import { CommandPen } from "./pen";
 import { sourceData, sourceShape } from "./source";
 
-// above anything Owlbear numbers by time, so the drawing sits on top of the sources
 const ART_Z = 9e12;
 const PAPER_MARGIN = 2;
 
@@ -44,7 +43,6 @@ function strokes(pen: CommandPen, color: string, width: number, opacity: number,
   );
 }
 
-/** Everything drawn for the floor: paper, shading, pencil walls, and fog-layer walls for Dynamic Fog. */
 export function buildArt(floor: MultiPolygon, style: MapStyle, dpi: number): Item[] {
   const box = bounds(floor);
   if (!box) return [];

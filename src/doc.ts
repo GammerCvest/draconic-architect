@@ -42,7 +42,6 @@ export interface RoomObject extends BaseObject {
   kind: "room";
 }
 
-// shape is the picture's frame: four corners clockwise from its top-left
 export interface ItemObject extends BaseObject {
   kind: "item";
   asset: string;

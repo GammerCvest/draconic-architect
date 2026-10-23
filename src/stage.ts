@@ -222,7 +222,6 @@ export class Stage {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA"))
         return;
-      // the settings dialog is modal
       if (this.editor.settingsOpen) return;
       if (this.activeTool.key?.(e)) {
         e.preventDefault();

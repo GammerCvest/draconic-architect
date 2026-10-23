@@ -211,7 +211,6 @@ export class Renderer {
     if (s.kind === "contours") this.drawContours(ink, part, cam, w, h);
   }
 
-  // each ring is a wide stroke with a slightly narrower one erased from it, outermost first
   private drawContours(ink: CanvasRenderingContext2D, part: Part, cam: Camera, w: number, h: number) {
     const s = part.style.shade;
     const sc = this.scratch.getContext("2d")!;
@@ -381,7 +380,6 @@ function buildCache(scene: Scene): Cache {
   return { floor: shapePath(scene.floor), parts };
 }
 
-// a stretch of wall takes the style of the floor just inside it
 function classifyWalls(scene: Scene, floorSegs: Segment[]): WallRun[][] {
   const out: WallRun[][] = scene.regions.map(() => []);
   if (scene.regions.length === 0) return out;

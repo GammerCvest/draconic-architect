@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import preact from "@preact/preset-vite";
 
-// Owlbear resolves extension paths from the site root, so a GitHub Pages build needs BASE_PATH=/repo/
 const base = process.env.BASE_PATH ?? "/";
 
 function owlbearManifest(): Plugin {
@@ -28,8 +27,6 @@ export default defineConfig({
   plugins: [preact(), owlbearManifest()],
   server: {
     cors: { origin: /^https:\/\/(www\.)?owlbear\.rodeo$/ },
-    // for testing in Owlbear through `cloudflared tunnel --url http://localhost:5173`
-    allowedHosts: [".trycloudflare.com"],
   },
   build: {
     rollupOptions: {

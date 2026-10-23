@@ -179,7 +179,6 @@ export class Editor {
     return this.style(o.style ?? this.layer(o.layer).style ?? this.doc.settings.style).id;
   }
 
-  // where shapes overlap, the topmost one decides the style
   scene(): Scene {
     const doc = this.doc;
     const key = [this.stacked(), doc.styles, doc.settings.style, doc.layers];
@@ -341,7 +340,6 @@ export class Editor {
     return this.expand(found);
   }
 
-  // unselected cut-outs between the merged pieces are baked in, so the map looks the same
   mergeSelection() {
     const doc = this.history.doc;
     const stack = this.stacked();

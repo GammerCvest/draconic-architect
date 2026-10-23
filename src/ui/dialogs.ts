@@ -1,9 +1,6 @@
 import { t } from "../i18n";
 import { inOwlbear, notify } from "../obr/table";
 
-// Owlbear runs extensions in sandboxed frames where alert() and confirm() may be blocked,
-// so messages and questions are drawn by the page itself.
-
 type Tone = "INFO" | "SUCCESS" | "ERROR";
 
 export function say(message: string, tone: Tone = "INFO") {

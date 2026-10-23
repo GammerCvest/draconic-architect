@@ -3,7 +3,6 @@ import type { MultiPolygon, Pair, Polygon, Ring } from "polygon-clipping";
 
 export type { MultiPolygon, Pair, Polygon, Ring };
 
-// polygon-clipping exports a default object at runtime, but its typings declare named exports
 const pc = ((PCModule as unknown as { default?: typeof PCModule }).default ?? PCModule) as typeof PCModule;
 
 export interface Vec {

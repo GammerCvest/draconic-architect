@@ -1,4 +1,3 @@
-/** The part of Path2D the mark generators draw with, so they can also feed other targets. */
 export interface Pen {
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;

@@ -3,8 +3,6 @@ import type { Pen } from "../render/pen";
 
 const MAX_SEGMENTS = 400;
 
-// Collects strokes as Owlbear path commands in scene units, split into several paths so no
-// single item grows too large.
 export class CommandPen implements Pen {
   readonly chunks: PathCommand[][] = [[]];
   private segments = 0;
@@ -32,7 +30,6 @@ export class CommandPen implements Pen {
     this.current.push([Command.CLOSE]);
   }
 
-  // dots become small diamonds
   arc(x: number, y: number, radius: number) {
     this.moveTo(x - radius, y);
     this.lineTo(x, y - radius);

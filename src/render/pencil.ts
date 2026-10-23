@@ -34,7 +34,6 @@ function shakyStroke(
   const uy = dy / len;
   const nx = -uy;
   const ny = ux;
-  // seeded by the line itself, so editing one room doesn't change the wobble of the others
   const seed = Math.floor(hash(Math.round(nx * 100), Math.round(ny * 100), nx * ax + ny * ay, pass) * 1e6);
   const u0 = ux * ax + uy * ay;
   const steps = Math.max(1, Math.ceil(len / STEP));

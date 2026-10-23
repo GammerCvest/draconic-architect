@@ -14,10 +14,6 @@ export interface TransferResult {
   skipped: number;
 }
 
-/**
- * Puts the editor's floor and furniture on the open scene as editable table items, so nothing has
- * to be uploaded. Uploaded pictures can't be carried this way and are counted as skipped.
- */
 export async function transferToScene(editor: Editor): Promise<TransferResult> {
   const doc = editor.doc;
   const styleId = editor.style(doc.settings.style).id;

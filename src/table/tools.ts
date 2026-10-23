@@ -40,7 +40,6 @@ function commandsOf(shape: MultiPolygon, dpi: number, close = true): PathCommand
   return out;
 }
 
-// One local (unshared) path shows what is being drawn.
 let previewShown = false;
 async function showPreview(commands: PathCommand[], carve: boolean) {
   const color = carve ? CARVE : ADD;

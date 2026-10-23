@@ -4,13 +4,13 @@ export interface PaperStyle {
   color: string;
   grain: number;
   texture: ImageSrc | null;
-  textureScale: number; // cells per tile
+  textureScale: number;
 }
 
 export interface FloorStyle {
   color: string;
   texture: ImageSrc | null;
-  textureScale: number; // cells per tile
+  textureScale: number;
   textureOpacity: number;
 }
 
@@ -19,9 +19,9 @@ export type WallKind = "sketch" | "pencil" | "ink" | "none";
 export interface WallStyle {
   kind: WallKind;
   color: string;
-  width: number; // cells
-  wobble: number; // cells
-  overshoot: number; // cells
+  width: number;
+  wobble: number;
+  overshoot: number;
   passes: number;
 }
 
@@ -30,13 +30,13 @@ export type ShadeKind = "diagonal" | "crosshatch" | "clusters" | "stipple" | "co
 export interface ShadeStyle {
   kind: ShadeKind;
   color: string;
-  band: number; // cells
+  band: number;
   density: number;
   angle: number;
-  lineWidth: number; // cells
+  lineWidth: number;
   smudge: number;
   stamps: ImageSrc[];
-  stampSize: number; // cells
+  stampSize: number;
 }
 
 export type GridKind = "lines" | "dots" | "none";

@@ -12,7 +12,6 @@ export function sourceData(item: Path): SourceData {
   return { carve: Boolean(data?.carve) };
 }
 
-// Owlbear places a point at position + rotate(scale * local)
 function toWorld(item: Item, x: number, y: number): Pair {
   const sx = x * item.scale.x;
   const sy = y * item.scale.y;
@@ -22,7 +21,6 @@ function toWorld(item: Item, x: number, y: number): Pair {
   return [item.position.x + sx * c - sy * s, item.position.y + sx * s + sy * c];
 }
 
-/** The source's area in grid cells. Paths may hold several rings, read with the even-odd rule. */
 export function sourceShape(item: Path, dpi: number): MultiPolygon {
   const rings: Ring[] = [];
   let ring: Ring = [];
@@ -52,7 +50,6 @@ export function sourceFill(style: MapStyle, carve: boolean) {
   return carve ? style.paper.color : style.floor.color;
 }
 
-/** A new source item drawing `shape` (grid cells), placed at its top-left corner. */
 export function buildSource(shape: MultiPolygon, carve: boolean, dpi: number, style: MapStyle, name: string): Path {
   const box = bounds(shape)!;
   const ox = box.minX * dpi;

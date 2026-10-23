@@ -19,7 +19,6 @@ export function image(src: string | null): HTMLImageElement | null {
   return img.complete && img.naturalWidth > 0 ? img : null;
 }
 
-// brightness turns into transparency: dark lines become ink, white becomes paper
 export function tintedImage(src: string, color: string): HTMLCanvasElement | null {
   const img = image(src);
   if (!img) return null;

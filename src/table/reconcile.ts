@@ -12,7 +12,6 @@ export async function sceneStyle(): Promise<MapStyle> {
   return PRESETS.find((p) => p.id === id) ?? PRESETS.find((p) => p.id === DEFAULT_STYLE_ID)!;
 }
 
-// Every client sees the same changes; only one GM redraws, or the drawing would be made twice.
 async function isLeader(): Promise<boolean> {
   if ((await OBR.player.getRole()) !== "GM") return false;
   const me = await OBR.player.getConnectionId();

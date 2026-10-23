@@ -100,8 +100,6 @@ button.mode-carve.active {
   padding: 4px;
 }
 
-/* ---- top bar ---- */
-
 .topbar {
   grid-column: 1 / -1;
   display: flex;
@@ -132,8 +130,6 @@ button.mode-carve.active {
   border-right: 1px solid var(--line);
 }
 
-/* ---- tools ---- */
-
 .toolbar {
   display: flex;
   flex-direction: column;
@@ -153,8 +149,6 @@ button.mode-carve.active {
   width: 24px;
   height: 24px;
 }
-
-/* ---- canvas ---- */
 
 .stage {
   position: relative;
@@ -190,8 +184,6 @@ button.mode-carve.active {
   justify-content: center;
   font-variant-numeric: tabular-nums;
 }
-
-/* ---- sidebar ---- */
 
 .sidebar {
   display: flex;
@@ -402,8 +394,6 @@ select {
   color: var(--ink);
 }
 
-/* ---- status ---- */
-
 .status {
   grid-column: 1 / -1;
   font-size: 12px;
@@ -415,8 +405,6 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* ---- dialog ---- */
 
 .backdrop {
   position: fixed;
@@ -443,8 +431,6 @@ select {
   justify-content: flex-end;
 }
 
-/* ---- narrow screens: panel moves under the canvas ---- */
-
 @media (max-width: 760px) {
   #app {
     grid-template-columns: auto 1fr;
@@ -462,8 +448,6 @@ select {
     display: none;
   }
 }
-
-/* ---- style panel ---- */
 
 .style-panel,
 .side-panel {
@@ -620,8 +604,6 @@ select {
   margin-top: 6px;
 }
 
-/* ---- items ---- */
-
 .items-panel {
   flex: 1;
   min-height: 120px;
@@ -709,8 +691,6 @@ select {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
-
-/* ---- messages ---- */
 
 .toast {
   position: fixed;
