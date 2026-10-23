@@ -26,7 +26,7 @@ function owlbearManifest(): Plugin {
 export default defineConfig({
   base,
   plugins: [preact(), owlbearManifest()],
-  server: { cors: { origin: "https://www.owlbear.rodeo" } },
+  server: { cors: { origin: /^https:\/\/(www\.)?owlbear\.rodeo$/ } },
   build: {
     rollupOptions: {
       input: {
