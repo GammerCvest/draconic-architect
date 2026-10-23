@@ -7,5 +7,7 @@ export interface CatalogItem {
   category: ItemCategory;
   w: number;
   h: number;
+  /** Picture size in pixels. */
+  px: [number, number];
   name: { uk: string; en: string };
 }

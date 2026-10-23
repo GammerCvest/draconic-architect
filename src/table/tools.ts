@@ -8,8 +8,9 @@ import OBR, {
   type Vector2,
 } from "@owlbear-rodeo/sdk";
 import { rectPolygon, unionShapes, type MultiPolygon, type Polygon } from "../geometry";
-import { t } from "../i18n";
-import { ACTION_CARVE, id, MODE_BRUSH, MODE_POLYGON, MODE_RECT, TOOL } from "./ids";
+import { lang, t } from "../i18n";
+import { ACTION_CARVE, id, ITEMS_POPOVER, MODE_BRUSH, MODE_ITEM, MODE_POLYGON, MODE_RECT, TOOL } from "./ids";
+import { catalogItem, propAt } from "./props";
 import { sceneStyle } from "./reconcile";
 import { buildSource } from "./source";
 
@@ -221,6 +222,65 @@ function brushMode() {
   });
 }
 
+const GHOST = id("ghost");
+
+function itemMode() {
+  let ghost = false;
+  const clearGhost = async () => {
+    if (!ghost) return;
+    ghost = false;
+    await OBR.scene.local.deleteItems([GHOST]);
+  };
+  return OBR.tool.createMode({
+    id: MODE_ITEM,
+    icons: [{ icon: icon("item"), label: t("toolItem"), filter: { activeTools: [TOOL] } }],
+    cursors: [{ cursor: "crosshair" }],
+    async onActivate() {
+      await OBR.popover.open({
+        id: ITEMS_POPOVER,
+        url: `${import.meta.env.BASE_URL}items.html`,
+        width: 320,
+        height: 520,
+        anchorReference: "POSITION",
+        anchorPosition: { left: 80, top: 80 },
+        anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+        disableClickAway: true,
+      });
+    },
+    async onDeactivate() {
+      await clearGhost();
+      await OBR.popover.close(ITEMS_POPOVER);
+    },
+    async onToolMove(context, event) {
+      const item = catalogItem(String(context.metadata.item ?? ""));
+      if (!item) return clearGhost();
+      const dpi = await OBR.scene.grid.getDpi();
+      const preview = propAt(item, { x: event.pointerPosition.x / dpi, y: event.pointerPosition.y / dpi }, dpi, "");
+      if (ghost) {
+        await OBR.scene.local.updateItems([GHOST], (d) => d.forEach((g) => (g.position = preview.position)), true);
+      } else {
+        ghost = true;
+        await OBR.scene.local.addItems([{ ...preview, id: GHOST, disableHit: true }]);
+      }
+    },
+    async onToolClick(context, event) {
+      const item = catalogItem(String(context.metadata.item ?? ""));
+      if (!item) return;
+      const dpi = await OBR.scene.grid.getDpi();
+      const name = item.name[lang()];
+      const at = { x: event.pointerPosition.x / dpi, y: event.pointerPosition.y / dpi };
+      await OBR.scene.items.addItems([propAt(item, at, dpi, name)]);
+    },
+    async onKeyDown(_context, event) {
+      if (event.key === "Escape") {
+        await clearGhost();
+        await OBR.tool.setMetadata(TOOL, { item: null });
+      }
+    },
+  });
+}
+
 export async function registerTools() {
   await OBR.tool.create({
     id: TOOL,
@@ -228,7 +288,7 @@ export async function registerTools() {
     defaultMode: MODE_RECT,
     defaultMetadata: { carve: false },
   });
-  await Promise.all([rectMode(), polygonMode(), brushMode()]);
+  await Promise.all([rectMode(), polygonMode(), brushMode(), itemMode()]);
   await OBR.tool.createAction({
     id: ACTION_CARVE,
     icons: [

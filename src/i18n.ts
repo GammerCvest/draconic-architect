@@ -9,8 +9,15 @@ const uk = {
   tableHint:
     "Малювати можна прямо на столі: інструмент «Драконячий архітектор» у панелі інструментів. Ctrl — протилежна дія, Shift — без прив'язки.",
   tableStyle: "Стиль мапи на столі",
+  tableItemsHint: "Вибери предмет і клацай на мапі. Esc — зняти вибір. Повертати й рухати — звичайним вибором Owlbear.",
   toTable: "На цю сцену",
-  toTableHint: "Покласти мапу й стіни на сцену, відкриту зараз",
+  toTableHint:
+    "Перенести кімнати й меблі на відкриту сцену — там їх можна далі правити інструментом «Драконячий архітектор»",
+  transferDone: "Перенесено на сцену (кімнат / предметів):",
+  transferSkipped: "Власні зображення не переносяться:",
+  asPicture: "Картинкою",
+  asPictureHint:
+    "Покласти мапу готовою картинкою з повним олівцевим виглядом. Owlbear попросить зберегти її у твоє сховище й вибрати",
   newScene: "Нова сцена",
   newSceneHint: "Створити в Owlbear окрему сцену з цією мапою та стінами",
   newSceneDone: "Сцену створено — вона з'явиться в списку сцен Owlbear.",
@@ -210,8 +217,15 @@ const en: Dict = {
   tableHint:
     "You can draw right on the table: the Draconic Architect tool in the toolbar. Ctrl does the opposite, Shift skips snapping.",
   tableStyle: "Map style on the table",
+  tableItemsHint:
+    "Pick an item and click the map. Esc drops the pick. Turn and move it with Owlbear's own select tool.",
   toTable: "To this scene",
-  toTableHint: "Put the map and its walls on the scene that is open now",
+  toTableHint: "Move rooms and furniture onto the open scene, where the Draconic Architect tool keeps editing them",
+  transferDone: "Moved to the scene (rooms / items):",
+  transferSkipped: "Uploaded pictures don't carry over:",
+  asPicture: "As a picture",
+  asPictureHint:
+    "Put the map on as a finished picture with the full pencil look. Owlbear will ask you to store it and pick it",
   newScene: "New scene",
   newSceneHint: "Create a separate Owlbear scene with this map and its walls",
   newSceneDone: "Scene created — it shows up in Owlbear's scene list.",

@@ -9,6 +9,8 @@ export const TOOL = id("tool");
 export const MODE_RECT = id("mode-rect");
 export const MODE_POLYGON = id("mode-polygon");
 export const MODE_BRUSH = id("mode-brush");
+export const MODE_ITEM = id("mode-item");
+export const ITEMS_POPOVER = id("items");
 export const ACTION_CARVE = id("action-carve");
 
 export interface SourceData {

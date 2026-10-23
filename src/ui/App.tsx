@@ -5,6 +5,7 @@ import { lang, setLang, t, type Key } from "../i18n";
 import { BASE_ZOOM, type Stage } from "../stage";
 import { buildUvtt } from "../export/uvtt";
 import { closeEditor, inOwlbear, placeOnScene, sendNewScene } from "../obr/table";
+import { transferToScene } from "../table/transfer";
 import { ask, say } from "./dialogs";
 import { download } from "./download";
 import { Icon, type IconName } from "./icons";
@@ -93,10 +94,19 @@ function TopBar({ editor, stage }: Props) {
     const out = await exportImage();
     if (out) download(await buildUvtt(out.png, editor.floor(), out.frame), "map.dd2vtt");
   };
-  const toTable = async (where: "here" | "new") => {
-    const out = await exportImage();
-    if (!out) return;
+  const toTable = async (where: "here" | "picture" | "new") => {
     try {
+      if (where === "here") {
+        const r = await transferToScene(editor);
+        say(
+          `${t("transferDone")} ${r.rooms} / ${r.items}${r.skipped ? `. ${t("transferSkipped")} ${r.skipped}` : ""}`,
+          "SUCCESS",
+        );
+        await closeEditor();
+        return;
+      }
+      const out = await exportImage();
+      if (!out) return;
       if (where === "new") {
         await sendNewScene(t("appName"), out.png, editor.floor(), out.frame);
         say(t("newSceneDone"), "SUCCESS");
@@ -143,6 +153,9 @@ function TopBar({ editor, stage }: Props) {
         <div class="group">
           <button class="primary" title={t("toTableHint")} onClick={() => toTable("here")}>
             {t("toTable")}
+          </button>
+          <button title={t("asPictureHint")} onClick={() => toTable("picture")}>
+            {t("asPicture")}
           </button>
           <button title={t("newSceneHint")} onClick={() => toTable("new")}>
             {t("newScene")}

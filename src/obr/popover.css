@@ -52,3 +52,65 @@ select {
 option {
   color: #2e2d2b;
 }
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chips .chip {
+  width: auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+}
+
+.chips .chip.active {
+  background: #f3eee2;
+  color: #2e2d2b;
+}
+
+input[type="search"] {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 4px;
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.grid .cell {
+  aspect-ratio: 1;
+  padding: 4px;
+  border-radius: 8px;
+  background: #f3eee2;
+  border: 2px solid transparent;
+}
+
+.grid .cell.active {
+  border-color: #3b6ea8;
+}
+
+.grid .cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
