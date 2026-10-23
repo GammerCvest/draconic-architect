@@ -1,0 +1,16 @@
+{
+  "name": "Draconic Architect",
+  "version": "0.1.0",
+  "manifest_version": 1,
+  "author": "GammerCvest",
+  "description": "Draw pencil-style dungeon maps and send them to the table with walls for dynamic fog.",
+  "icon": "{{base}}icon.svg",
+  "action": {
+    "title": "Draconic Architect",
+    "icon": "{{base}}icon.svg",
+    "popover": "{{base}}obr.html",
+    "height": 220,
+    "width": 320
+  },
+  "homepage_url": "https://github.com/GammerCvest/draconic-architect"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "draconic-architect",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "lint": "tsc --noEmit && prettier --check ."
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "@owlbear-rodeo/sdk": "^3.1.0",
+    "polygon-clipping": "^0.15.7",
+    "preact": "^11.0.1"
+  },
+  "license": "GPL-3.0-or-later"
+}
