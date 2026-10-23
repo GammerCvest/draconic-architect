@@ -5,6 +5,7 @@ import { CATALOG } from "../items/catalog";
 import { BUILTIN, builtinSrc } from "../items/resolve";
 import type { ItemCategory, ItemSet } from "../items/types";
 import { imageFileToData, pickFile } from "../style/library";
+import { say } from "./dialogs";
 
 type Tab = ItemSet | "mine";
 
@@ -62,7 +63,7 @@ export function ItemsPanel({ editor }: { editor: Editor }) {
           h: Math.max(0.25, Math.round((size.h / size.w) * 4) / 4),
         });
       } catch {
-        alert(t("badImage"));
+        say(t("badImage"), "ERROR");
       }
     }
     if (last) editor.setItemBrush(last);

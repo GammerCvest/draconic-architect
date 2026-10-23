@@ -1,8 +1,17 @@
-import OBR, { buildImageUpload, buildSceneUpload, buildWall } from "@owlbear-rodeo/sdk";
+import OBR, {
+  buildImage,
+  buildImageUpload,
+  buildPath,
+  buildSceneUpload,
+  Command,
+  type Item,
+  type PathCommand,
+  type Vector2,
+} from "@owlbear-rodeo/sdk";
 import type { MultiPolygon } from "../geometry";
 import { wallLines, type ExportFrame } from "../export/uvtt";
 
-const SCENE_DPI = 150;
+const NEW_SCENE_DPI = 150;
 export const EDITOR_MODAL = "dev.gammercvest.draconic-architect/editor";
 
 export const inOwlbear = OBR.isAvailable;
@@ -11,18 +20,67 @@ export function whenReady(): Promise<void> {
   return new Promise((resolve) => OBR.onReady(() => resolve()));
 }
 
-export async function sendScene(name: string, png: Blob, floor: MultiPolygon, frame: ExportFrame) {
+export async function notify(message: string, variant: "INFO" | "SUCCESS" | "ERROR" = "INFO") {
   await whenReady();
-  const toScene = (p: { x: number; y: number }) => ({
-    x: (p.x - frame.originX) * SCENE_DPI,
-    y: (p.y - frame.originY) * SCENE_DPI,
+  await OBR.notification.show(message, variant);
+}
+
+function mapFile(name: string, png: Blob): File {
+  return new File([png], `${name}.png`, { type: "image/png" });
+}
+
+// Dynamic Fog (and extensions built on it) turn drawings on the fog layer into walls.
+function fogWalls(floor: MultiPolygon, frame: ExportFrame, origin: Vector2, dpi: number): Item[] {
+  return wallLines(floor).map((line) => {
+    const commands: PathCommand[] = line.map((p, i) => [
+      i === 0 ? Command.MOVE : Command.LINE,
+      origin.x + (p.x - frame.originX) * dpi,
+      origin.y + (p.y - frame.originY) * dpi,
+    ]);
+    return buildPath()
+      .commands(commands)
+      .fillOpacity(0)
+      .strokeColor("#000000")
+      .strokeOpacity(1)
+      .strokeWidth(2)
+      .layer("FOG")
+      .name("Wall")
+      .locked(true)
+      .build();
   });
-  const walls = wallLines(floor).map((line) =>
-    buildWall().points(line.map(toScene)).doubleSided(true).blocking(true).locked(true).name(name).build(),
-  );
-  const baseMap = buildImageUpload(png).name(name).dpi(frame.pxPerCell).offset({ x: 0, y: 0 }).build();
-  const scene = buildSceneUpload().name(name).baseMap(baseMap).items(walls).build();
+}
+
+export async function sendNewScene(name: string, png: Blob, floor: MultiPolygon, frame: ExportFrame) {
+  await whenReady();
+  const baseMap = buildImageUpload(mapFile(name, png)).name(name).dpi(frame.pxPerCell).build();
+  const scene = buildSceneUpload()
+    .name(name)
+    .gridType("SQUARE")
+    .baseMap(baseMap)
+    .items(fogWalls(floor, frame, { x: 0, y: 0 }, NEW_SCENE_DPI))
+    .fogFilled(true)
+    .build();
   await OBR.assets.uploadScenes([scene]);
+}
+
+/**
+ * Owlbear only places pictures that are in the user's storage, so the map is uploaded first and
+ * then picked from Owlbear's own image picker. Returns false when the user closes the picker.
+ */
+export async function placeOnScene(name: string, png: Blob, floor: MultiPolygon, frame: ExportFrame): Promise<boolean> {
+  await whenReady();
+  if (!(await OBR.scene.isReady())) throw new Error("no scene open");
+  const upload = buildImageUpload(mapFile(name, png)).name(name).dpi(frame.pxPerCell).locked(true).build();
+  const picker = OBR.assets.downloadImages(false, name, "MAP");
+  await new Promise((r) => setTimeout(r, 300));
+  await OBR.assets.uploadImages([upload], "MAP");
+  const [picked] = await picker;
+  if (!picked) return false;
+  const dpi = await OBR.scene.grid.getDpi();
+  const origin = { x: 0, y: 0 };
+  const map = buildImage(picked.image, picked.grid).name(name).layer("MAP").position(origin).locked(true).build();
+  await OBR.scene.items.addItems([map, ...fogWalls(floor, frame, origin, dpi)]);
+  return true;
 }
 
 export async function closeEditor() {

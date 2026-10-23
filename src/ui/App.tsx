@@ -4,7 +4,8 @@ import type { DrawMode, Editor, ToolId } from "../editor";
 import { lang, setLang, t, type Key } from "../i18n";
 import { BASE_ZOOM, type Stage } from "../stage";
 import { buildUvtt } from "../export/uvtt";
-import { closeEditor, inOwlbear, sendScene } from "../obr/table";
+import { closeEditor, inOwlbear, placeOnScene, sendNewScene } from "../obr/table";
+import { ask, say } from "./dialogs";
 import { download } from "./download";
 import { Icon, type IconName } from "./icons";
 import { ItemsPanel } from "./ItemsPanel";
@@ -62,25 +63,25 @@ function TopBar({ editor, stage }: Props) {
         editor.load(await file.text());
         stage.fit();
       } catch {
-        alert(t("badFile"));
+        say(t("badFile"), "ERROR");
       }
     });
     input.click();
   };
-  const newMap = () => {
-    if (editor.doc.objects.length > 0 && !confirm(t("confirmNew"))) return;
+  const newMap = async () => {
+    if (editor.doc.objects.length > 0 && !(await ask(t("confirmNew")))) return;
     editor.newMap();
     stage.fit();
   };
   const exportImage = async () => {
     try {
       const out = await stage.exportImage();
-      if (!out) alert(t("emptyMap"));
+      if (!out) say(t("emptyMap"));
       else if (out.frame.pxPerCell < editor.doc.settings.exportPxPerCell)
-        alert(`${t("exportReduced")} ${out.frame.pxPerCell}`);
+        say(`${t("exportReduced")} ${out.frame.pxPerCell}`);
       return out;
     } catch {
-      alert(t("exportFailed"));
+      say(t("exportFailed"), "ERROR");
       return null;
     }
   };
@@ -92,14 +93,20 @@ function TopBar({ editor, stage }: Props) {
     const out = await exportImage();
     if (out) download(await buildUvtt(out.png, editor.floor(), out.frame), "map.dd2vtt");
   };
-  const toTable = async () => {
+  const toTable = async (where: "here" | "new") => {
     const out = await exportImage();
     if (!out) return;
     try {
-      await sendScene(t("appName"), out.png, editor.floor(), out.frame);
-      alert(t("toTableDone"));
-    } catch {
-      alert(t("toTableFailed"));
+      if (where === "new") {
+        await sendNewScene(t("appName"), out.png, editor.floor(), out.frame);
+        say(t("newSceneDone"), "SUCCESS");
+      } else if (await placeOnScene(t("appName"), out.png, editor.floor(), out.frame)) {
+        say(t("placedDone"), "SUCCESS");
+        await closeEditor();
+      }
+    } catch (e) {
+      console.error(e);
+      say(`${t("toTableFailed")} ${e instanceof Error ? e.message : ""}`, "ERROR");
     }
   };
   return (
@@ -134,8 +141,11 @@ function TopBar({ editor, stage }: Props) {
       </div>
       {tableMode && (
         <div class="group">
-          <button class="primary" title={t("toTableHint")} onClick={toTable}>
+          <button class="primary" title={t("toTableHint")} onClick={() => toTable("here")}>
             {t("toTable")}
+          </button>
+          <button title={t("newSceneHint")} onClick={() => toTable("new")}>
+            {t("newScene")}
           </button>
           <button onClick={() => closeEditor()}>{t("closeEditor")}</button>
         </div>
@@ -219,9 +229,9 @@ function Sidebar({ editor }: { editor: Editor }) {
     .reverse();
   const active = editor.layer(editor.activeLayer);
   const activeIndex = doc.layers.indexOf(active);
-  const deleteLayer = () => {
+  const deleteLayer = async () => {
     const used = doc.objects.some((o) => o.layer === active.id);
-    if (used && !confirm(t("confirmDeleteLayer"))) return;
+    if (used && !(await ask(t("confirmDeleteLayer")))) return;
     editor.deleteLayer(active.id);
   };
   return (

@@ -709,3 +709,38 @@ select {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+
+/* ---- messages ---- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 9px 14px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.4s;
+}
+
+.toast-error {
+  background: var(--carve);
+}
+
+.toast.hide {
+  opacity: 0;
+}
+
+.dialog p {
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+
+.dialog-actions {
+  gap: 6px;
+}

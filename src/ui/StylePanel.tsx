@@ -5,6 +5,7 @@ import { t, type Key } from "../i18n";
 import { imageFileToData, loadLibrary, pickFile, saveLibrary, styleFromFile, styleToFile } from "../style/library";
 import { PRESETS } from "../style/presets";
 import type { GridKind, MapStyle, ShadeKind, WallKind } from "../style/types";
+import { say } from "./dialogs";
 import { download } from "./download";
 
 const WALL_KINDS: [WallKind, Key][] = [
@@ -37,7 +38,7 @@ export function StylePanel({ editor }: { editor: Editor }) {
 
   const storeLibrary = (list: MapStyle[]) => {
     if (saveLibrary(list)) setLibrary(list);
-    else alert(t("libraryFull"));
+    else say(t("libraryFull"), "ERROR");
   };
   const toLibrary = () => storeLibrary([...library.filter((s) => s.id !== style.id), structuredClone(style)]);
   const importStyle = async () => {
@@ -48,7 +49,7 @@ export function StylePanel({ editor }: { editor: Editor }) {
       setEditingId(editor.addStyle(imported));
       storeLibrary([...library, imported]);
     } catch {
-      alert(t("badStyleFile"));
+      say(t("badStyleFile"), "ERROR");
     }
   };
   const duplicate = () => {
@@ -402,7 +403,7 @@ function Texture(props: { value: string | null; onChange: (v: string | null) => 
     try {
       props.onChange(await imageFileToData(file));
     } catch {
-      alert(t("badImage"));
+      say(t("badImage"), "ERROR");
     }
   };
   return (
@@ -423,7 +424,7 @@ function Stamps(props: { value: string[]; onChange: (v: string[]) => void }) {
       try {
         added.push(await imageFileToData(f));
       } catch {
-        alert(t("badImage"));
+        say(t("badImage"), "ERROR");
       }
     }
     if (added.length) props.onChange([...props.value, ...added]);
