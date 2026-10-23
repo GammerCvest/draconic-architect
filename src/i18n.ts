@@ -47,6 +47,7 @@ const uk = {
   undo: "Скасувати",
   redo: "Повторити",
   settings: "Налаштування",
+  language: "Мова: українська / English",
   styles: "Стилі",
   stylesInMap: "У цій мапі",
   mapStyleTag: "мапа",
@@ -237,6 +238,7 @@ const en: Dict = {
   undo: "Undo",
   redo: "Redo",
   settings: "Settings",
+  language: "Language: English / українська",
   styles: "Styles",
   stylesInMap: "In this map",
   mapStyleTag: "map",
@@ -388,7 +390,7 @@ function detect(): Lang {
     const saved = localStorage.getItem("da.lang");
     if (saved === "uk" || saved === "en") return saved;
   } catch {}
-  return navigator.language.toLowerCase().startsWith("uk") ? "uk" : "en";
+  return "en";
 }
 
 export function t(key: Key): string {

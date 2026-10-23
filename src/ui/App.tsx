@@ -147,12 +147,13 @@ function TopBar({ editor, stage }: Props) {
       </button>
       <IconButton icon="gear" title="settings" onClick={() => editor.setSettingsOpen(true)} />
       <button
+        title={t("language")}
         onClick={() => {
           setLang(lang() === "uk" ? "en" : "uk");
           editor.emit();
         }}
       >
-        {lang() === "uk" ? "EN" : "UA"}
+        {lang() === "uk" ? "UA" : "EN"}
       </button>
     </header>
   );

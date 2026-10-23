@@ -3,7 +3,6 @@ title: Draconic Architect
 description: Draw pencil-style dungeon maps and send them to the table with walls for dynamic fog
 author: GammerCvest
 image: https://raw.githubusercontent.com/GammerCvest/draconic-architect/main/docs/images/header.jpg
-icon: https://gammercvest.github.io/draconic-architect/logo.png
 tags:
   - drawing
   - fog
