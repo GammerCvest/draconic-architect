@@ -1,6 +1,7 @@
 import { pointInside, SegmentIndex, type Box, type Segment } from "../geometry";
 import { hash, noise1 } from "../rng";
 import type { ShadeStyle } from "../style/types";
+import { canvasPen, type Pen, type PenFactory } from "./pen";
 
 export interface ShadeInput {
   walls: Segment[];
@@ -18,13 +19,13 @@ export interface Stamp {
 }
 
 export interface ShadeMarks {
-  lines: Path2D;
-  dots: Path2D;
+  lines: Pen;
+  dots: Pen;
   stamps: Stamp[];
 }
 
-export function buildShade(input: ShadeInput): ShadeMarks {
-  const marks: ShadeMarks = { lines: new Path2D(), dots: new Path2D(), stamps: [] };
+export function buildShade(input: ShadeInput, pen: PenFactory = canvasPen): ShadeMarks {
+  const marks: ShadeMarks = { lines: pen(), dots: pen(), stamps: [] };
   const { style } = input;
   if (input.walls.length === 0 || style.band <= 0) return marks;
   const index = new SegmentIndex(input.walls, style.band);
@@ -54,7 +55,7 @@ export function buildShade(input: ShadeInput): ShadeMarks {
 }
 
 function parallelLines(
-  path: Path2D,
+  path: Pen,
   input: ShadeInput,
   near: (x: number, y: number) => number,
   angleDeg: number,
@@ -105,7 +106,7 @@ function parallelLines(
   }
 }
 
-function clusters(path: Path2D, input: ShadeInput, near: (x: number, y: number) => number) {
+function clusters(path: Pen, input: ShadeInput, near: (x: number, y: number) => number) {
   const { box, style } = input;
   const spacing = 0.22 + (1 - style.density) * 0.2;
   const band = style.band;
@@ -131,7 +132,7 @@ function clusters(path: Path2D, input: ShadeInput, near: (x: number, y: number) 
   });
 }
 
-function stipple(path: Path2D, input: ShadeInput, near: (x: number, y: number) => number) {
+function stipple(path: Pen, input: ShadeInput, near: (x: number, y: number) => number) {
   const { box, style } = input;
   const spacing = 0.045 + (1 - style.density) * 0.07;
   eachJittered(box, style.band, spacing, (x, y, gx, gy) => {

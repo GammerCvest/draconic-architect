@@ -8,8 +8,9 @@
     "title": "Draconic Architect",
     "icon": "{{base}}icon.svg",
     "popover": "{{base}}obr.html",
-    "height": 220,
+    "height": 340,
     "width": 320
   },
-  "homepage_url": "https://github.com/GammerCvest/draconic-architect"
+  "homepage_url": "https://github.com/GammerCvest/draconic-architect",
+  "background_url": "{{base}}background.html"
 }

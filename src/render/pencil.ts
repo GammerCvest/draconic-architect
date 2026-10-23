@@ -1,5 +1,6 @@
 import type { Pair } from "../geometry";
 import { hash, noise1 } from "../rng";
+import { canvasPen, type Pen, type PenFactory } from "./pen";
 import type { WallStyle } from "../style/types";
 
 const STEP = 0.2;
@@ -10,13 +11,13 @@ export interface WallRun {
 }
 
 export interface WallPass {
-  path: Path2D;
+  path: Pen;
   alpha: number;
   width: number;
 }
 
 function shakyStroke(
-  path: Path2D,
+  path: Pen,
   ax: number,
   ay: number,
   bx: number,
@@ -65,12 +66,12 @@ function corners(run: WallRun): Pair[] {
   return out;
 }
 
-export function buildWalls(runs: WallRun[], style: WallStyle): WallPass[] {
+export function buildWalls(runs: WallRun[], style: WallStyle, pen: PenFactory = canvasPen): WallPass[] {
   if (style.kind === "none") return [];
   const passes = Math.max(1, Math.round(style.passes));
   const out: WallPass[] = [];
   for (let p = 0; p < passes; p++) {
-    const path = new Path2D();
+    const path = pen();
     for (const run of runs) {
       const pts = corners(run);
       if (pts.length < 2) continue;
@@ -86,7 +87,7 @@ export function buildWalls(runs: WallRun[], style: WallStyle): WallPass[] {
   return out;
 }
 
-function continuousRun(path: Path2D, pts: Pair[], closed: boolean, amplitude: number, pass: number) {
+function continuousRun(path: Pen, pts: Pair[], closed: boolean, amplitude: number, pass: number) {
   const last = closed ? pts.length : pts.length - 1;
   for (let i = 0; i < last; i++) {
     const [ax, ay] = pts[i];
@@ -96,7 +97,7 @@ function continuousRun(path: Path2D, pts: Pair[], closed: boolean, amplitude: nu
   if (closed) path.closePath();
 }
 
-function sketchRun(path: Path2D, pts: Pair[], closed: boolean, style: WallStyle, pass: number) {
+function sketchRun(path: Pen, pts: Pair[], closed: boolean, style: WallStyle, pass: number) {
   const last = closed ? pts.length : pts.length - 1;
   for (let i = 0; i < last; i++) {
     const [ax, ay] = pts[i];

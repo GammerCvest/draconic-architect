@@ -36,6 +36,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         obr: resolve(__dirname, "obr.html"),
+        background: resolve(__dirname, "background.html"),
       },
     },
   },

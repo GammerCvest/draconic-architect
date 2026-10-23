@@ -149,7 +149,7 @@ export class Renderer {
       for (const pass of part.walls) {
         ink.globalAlpha = pass.alpha;
         ink.lineWidth = Math.max(ws.width, 1.4 / cam.zoom) * pass.width;
-        ink.stroke(pass.path);
+        ink.stroke(pass.path as Path2D);
       }
     }
     ink.globalAlpha = 1;
@@ -185,9 +185,9 @@ export class Renderer {
     ink.fillStyle = s.color;
     ink.globalAlpha = 0.7;
     ink.lineWidth = Math.max(s.lineWidth, 0.6 / cam.zoom);
-    ink.stroke(part.marks.lines);
+    ink.stroke(part.marks.lines as Path2D);
     ink.globalAlpha = 0.85;
-    ink.fill(part.marks.dots);
+    ink.fill(part.marks.dots as Path2D);
     ink.globalAlpha = 1;
     if (s.kind === "stamps") {
       const imgs = s.stamps.map((src) => image(src));

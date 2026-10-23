@@ -233,3 +233,9 @@ export function shapesTouch(a: MultiPolygon, b: MultiPolygon): boolean {
   for (const x of sa) for (const y of sb) if (segmentsDistance(x, y) < 1e-6) return true;
   return pointInside(sa[0].ax, sa[0].ay, sb) || pointInside(sb[0].ax, sb[0].ay, sa);
 }
+
+export function xorRings(rings: Ring[]): MultiPolygon {
+  if (rings.length === 0) return [];
+  const [first, ...rest] = rings.map((r): Polygon => [r]);
+  return clean(pc.xor(first, ...rest));
+}

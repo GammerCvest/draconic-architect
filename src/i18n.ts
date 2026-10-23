@@ -4,6 +4,11 @@ const uk = {
   appName: "Драконячий архітектор",
   obrHint: "Малюй мапу в редакторі, а потім одним натиском відправ її на стіл разом зі стінами для туману.",
   obrOpen: "Відкрити редактор",
+  tableCarveOff: "Малюю підлогу (натисни — вирізати)",
+  tableCarveOn: "Вирізаю (натисни — малювати підлогу)",
+  tableHint:
+    "Малювати можна прямо на столі: інструмент «Драконячий архітектор» у панелі інструментів. Ctrl — протилежна дія, Shift — без прив'язки.",
+  tableStyle: "Стиль мапи на столі",
   toTable: "На цю сцену",
   toTableHint: "Покласти мапу й стіни на сцену, відкриту зараз",
   newScene: "Нова сцена",
@@ -200,6 +205,11 @@ const en: Dict = {
   appName: "Draconic Architect",
   obrHint: "Draw the map in the editor, then send it to the table in one click, walls for fog included.",
   obrOpen: "Open editor",
+  tableCarveOff: "Drawing floor (click to cut out)",
+  tableCarveOn: "Cutting out (click to draw floor)",
+  tableHint:
+    "You can draw right on the table: the Draconic Architect tool in the toolbar. Ctrl does the opposite, Shift skips snapping.",
+  tableStyle: "Map style on the table",
   toTable: "To this scene",
   toTableHint: "Put the map and its walls on the scene that is open now",
   newScene: "New scene",
